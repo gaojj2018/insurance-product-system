@@ -1,0 +1,45 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: insurance-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: http://localhost:8092
+          predicates:
+            - Path=/api/auth/**
+        - id: product-service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/product/**
+        - id: application-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/application/**
+        - id: underwriting-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/underwriting/**
+        - id: policy-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/policy/**
+        - id: claims-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/claims/**
+        - id: finance-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/finance/**
+        - id: customer-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/customer/**

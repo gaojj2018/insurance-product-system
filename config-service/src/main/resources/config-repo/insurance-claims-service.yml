@@ -1,0 +1,8 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: insurance-claims-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/insurance_claims?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true

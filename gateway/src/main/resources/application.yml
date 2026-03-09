@@ -1,0 +1,193 @@
+server:
+  port: 8888
+
+# JWT配置（与auth-service保持一致，请设置环境变量JWT_SECRET）
+jwt:
+  secret: ${JWT_SECRET:insurance-jwt-secret-key-2024-must-be-at-least-256-bits}
+
+spring:
+  application:
+    name: gateway
+  boot:
+    admin:
+      client:
+        url: http://localhost:8090
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # 产品服务
+        - id: product-service
+          uri: lb://insurance-product-service
+          predicates:
+            - Path=/api/product/**
+
+        # 客户服务
+        - id: customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customer/**
+
+        # 投保服务
+        - id: application-service
+          uri: lb://application-service
+          predicates:
+            - Path=/api/application/**
+
+        # 核保服务
+        - id: underwriting-service
+          uri: lb://underwriting-service
+          predicates:
+            - Path=/api/underwriting/**
+
+        # 保单服务
+        - id: policy-service
+          uri: lb://policy-service
+          predicates:
+            - Path=/api/policy/**
+
+        # 理赔服务
+        - id: claims-service
+          uri: lb://claims-service
+          predicates:
+            - Path=/api/claims/**
+        
+        # 条款服务
+        - id: clause-service
+          uri: lb://insurance-product-service
+          predicates:
+            - Path=/api/clause/**
+        
+        # 保障范围服务
+        - id: coverage-service
+          uri: lb://insurance-product-service
+          predicates:
+            - Path=/api/coverage/**
+
+        # 财务服务 - 统计 (必须在 /api/finance/** 之前)
+        - id: finance-statistics-service
+          uri: lb://finance-service
+          predicates:
+            - Path=/api/finance/stats
+          filters:
+            - RewritePath=/api/finance/stats,/api/statistics/summary
+
+        # 财务服务 - 报表
+        - id: finance-report-service
+          uri: lb://finance-service
+          predicates:
+            - Path=/api/finance/report
+          filters:
+            - RewritePath=/api/finance/report,/api/statistics/trend
+
+        # 财务服务 - 统计
+        - id: finance-statistics2-service
+          uri: lb://finance-service
+          predicates:
+            - Path=/api/finance/statistics/**
+          filters:
+            - RewritePath=/api/finance/statistics/(?<path>.*),/api/statistics/${path}
+
+        # 财务服务 - 保费
+        - id: finance-premium-service
+          uri: lb://finance-service
+          predicates:
+            - Path=/api/finance/premium/**
+          filters:
+            - RewritePath=/api/finance/premium/(?<path>.*),/api/premium/$\{path}
+
+        # 理赔服务 - 理赔支付（财务模块调用）
+        - id: finance-claims-service
+          uri: lb://claims-service
+          predicates:
+            - Path=/api/finance/claim-payment/**
+          filters:
+            - RewritePath=/api/finance/claim-payment/(?<path>.*),/api/claims/$\{path}
+
+        # 财务服务 - 其他
+        - id: finance-service
+          uri: lb://finance-service
+          predicates:
+            - Path=/api/finance/**
+
+        # 认证服务
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 用户管理
+        - id: user-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/user/**
+
+        # 角色管理
+        - id: role-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/role/**
+
+        # 机构管理
+        - id: org-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/org/**
+
+        # 权限管理
+        - id: permission-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/permission/**
+
+        # 配置服务
+        - id: config-service
+          uri: lb://config-service
+          predicates:
+            - Path=/api/config/**
+
+        # 消息服务
+        - id: message-service
+          uri: lb://message-service
+          predicates:
+            - Path=/api/message/**
+
+        # 报告服务
+        - id: report-service
+          uri: lb://report-service
+          predicates:
+            - Path=/api/report/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    metadata:
+      management:
+        endpoints:
+          web:
+            exposure:
+              include: '*'
+          base-url: http://localhost:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
