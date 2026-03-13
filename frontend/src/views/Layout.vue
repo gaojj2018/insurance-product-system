@@ -1,6 +1,6 @@
 <template>
   <el-container class="layout-container">
-    <el-aside :width="isCollapse ? '64px' : '220px'" class="sidebar">
+    <el-aside :width="isCollapse ? '64px' : '180px'" class="sidebar">
       <div class="sidebar-header">
         <div class="logo">
           <div class="logo-icon" v-if="isCollapse">保</div>
@@ -174,7 +174,7 @@ const handleLogout = () => {
 }
 
 .sidebar-menu:not(.el-menu--collapse) {
-  width: 220px;
+  width: 180px;
 }
 
 .sidebar-menu .el-menu-item,
