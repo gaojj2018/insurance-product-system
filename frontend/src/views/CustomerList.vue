@@ -32,6 +32,9 @@
     <!-- 表格区域 -->
     <el-card>
       <el-table :data="tableData" border stripe v-loading="loading">
+        <template #empty>
+          <el-empty description="暂无客户数据" />
+        </template>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="customerName" label="客户姓名" width="120" />
         <el-table-column prop="customerType" label="客户类型" width="100">

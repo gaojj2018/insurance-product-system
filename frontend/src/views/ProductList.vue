@@ -43,6 +43,9 @@
     <!-- 表格区域 -->
     <el-card>
       <el-table :data="tableData" border stripe v-loading="loading">
+        <template #empty>
+          <el-empty description="暂无产品数据" />
+        </template>
         <el-table-column prop="productId" label="ID" width="80" />
         <el-table-column prop="productCode" label="产品代码" width="120" />
         <el-table-column prop="productName" label="产品名称" min-width="150" />

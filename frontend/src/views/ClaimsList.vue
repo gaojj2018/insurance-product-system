@@ -39,7 +39,10 @@
     
     <!-- 表格区域 -->
     <el-card>
-      <el-table :data="tableData" border stripe>
+      <el-table :data="tableData" border stripe v-loading="loading">
+        <template #empty>
+          <el-empty description="暂无理赔数据" />
+        </template>
         <el-table-column prop="claimNo" label="理赔单号" width="150" />
         <el-table-column prop="policyNo" label="保单号" width="150" />
         <el-table-column prop="claimantName" label="申请人" width="100" />
@@ -271,6 +274,7 @@ const handlePolicyChange = (policyId) => {
 }
 
 const tableData = ref([])
+const loading = ref(false)
 const total = ref(0)
 const queryForm = ref({
   pageNum: 1,
@@ -346,6 +350,7 @@ const getStatusText = (status) => {
 }
 
 const loadData = async () => {
+  loading.value = true
   try {
     const response = await request.post('/claims/page', queryForm.value)
     if (response.data.code === 200) {
@@ -354,6 +359,8 @@ const loadData = async () => {
     }
   } catch (error) {
     ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
   }
 }
 

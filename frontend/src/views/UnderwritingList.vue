@@ -37,7 +37,10 @@
     </div>
     
     <el-card>
-      <el-table :data="tableData" border stripe>
+      <el-table :data="tableData" border stripe v-loading="loading">
+        <template #empty>
+          <el-empty description="暂无核保数据" />
+        </template>
         <el-table-column prop="applicationNo" label="投保单号" width="150" />
         <el-table-column prop="productName" label="产品名称" width="150" />
         <el-table-column prop="applicantName" label="投保人" width="100" />
@@ -126,6 +129,7 @@ import { ElMessage } from 'element-plus'
 import request from '@/api/index'
 
 const tableData = ref([])
+const loading = ref(false)
 const total = ref(0)
 const queryForm = ref({
   pageNum: 1,
@@ -170,6 +174,7 @@ const getStatusText = (status) => {
 }
 
 const loadData = async () => {
+  loading.value = true
   try {
     const response = await request.post('/underwriting/page', queryForm.value)
     if (response.data.code === 200) {
@@ -178,6 +183,8 @@ const loadData = async () => {
     }
   } catch (error) {
     ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
   }
 }
 

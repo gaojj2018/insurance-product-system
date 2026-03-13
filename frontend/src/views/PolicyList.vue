@@ -37,7 +37,10 @@
     
     <!-- 表格区域 -->
     <el-card>
-      <el-table :data="tableData" border stripe>
+      <el-table :data="tableData" border stripe v-loading="loading">
+        <template #empty>
+          <el-empty description="暂无保单数据" />
+        </template>
         <el-table-column prop="policyNo" label="保单号" width="150" />
         <el-table-column prop="productName" label="产品名称" width="150" />
         <el-table-column prop="insuredId" label="被保人ID" width="100" />
@@ -147,6 +150,7 @@ import { ElMessage } from 'element-plus'
 import request from '@/api/index'
 
 const tableData = ref([])
+const loading = ref(false)
 const total = ref(0)
 const queryForm = ref({
   pageNum: 1,
@@ -264,12 +268,18 @@ const confirmChange = async () => {
 }
 
 const handleSurrender = (row) => {
-  surrenderForm.value = {
-    policyId: row.policyId,
-    policyNo: row.policyNo,
-    reason: ''
-  }
-  surrenderVisible.value = true
+  ElMessageBox.confirm('确定要对该保单进行退保操作吗？', '退保确认', {
+    confirmButtonText: '确定退保',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    surrenderForm.value = {
+      policyId: row.policyId,
+      policyNo: row.policyNo,
+      reason: ''
+    }
+    surrenderVisible.value = true
+  }).catch(() => {})
 }
 
 const confirmSurrender = async () => {
