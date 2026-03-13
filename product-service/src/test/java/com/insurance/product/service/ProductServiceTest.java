@@ -2,6 +2,8 @@ package com.insurance.product.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.insurance.product.client.ApplicationClient;
+import com.insurance.product.client.PolicyClient;
 import com.insurance.product.dto.ProductQueryDTO;
 import com.insurance.product.entity.Product;
 import com.insurance.product.repository.ProductRepository;
@@ -23,17 +25,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * ProductService 单元测试
- */
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+    
+    @Mock
+    private ApplicationClient applicationClient;
+    
+    @Mock
+    private PolicyClient policyClient;
 
     @Spy
-    private ProductService productService = new ProductService();
+    private ProductService productService = new ProductService(applicationClient, policyClient);
 
     private Product testProduct;
 

@@ -28,8 +28,8 @@ call mvn clean package -pl auth-service -am -DskipTests
 echo [5/14] Building gateway...
 call mvn clean package -pl gateway -am -DskipTests
 
-echo [6/14] Building product-service (backend)...
-call mvn clean package -pl backend -am -DskipTests
+echo [6/14] Building product-service...
+call mvn clean package -pl product-service -am -DskipTests
 
 echo [7/14] Building customer-service...
 call mvn clean package -pl customer-service -am -DskipTests
@@ -49,11 +49,8 @@ call mvn clean package -pl claims-service -am -DskipTests
 echo [12/14] Building finance-service...
 call mvn clean package -pl finance-service -am -DskipTests
 
-echo [13/14] Building message-service...
-call mvn clean package -pl message-service -am -DskipTests
-
-echo [14/14] Building report-service...
-call mvn clean package -pl report-service -am -DskipTests
+REM Note: message-service and report-service are not included in the parent pom
+REM Skipping these modules as they are not part of the main build
 
 echo.
 echo ================================

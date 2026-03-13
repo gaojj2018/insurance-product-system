@@ -5,6 +5,32 @@
       <el-button type="primary" @click="handleCreate">新建投保</el-button>
     </div>
     
+    <!-- 搜索区域 -->
+    <el-card class="search-card">
+      <el-form :model="queryForm" inline>
+        <el-form-item label="投保单号">
+          <el-input v-model="queryForm.applicationNo" placeholder="请输入投保单号" clearable />
+        </el-form-item>
+        <el-form-item label="产品名称">
+          <el-input v-model="queryForm.productName" placeholder="请输入产品名称" clearable />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="queryForm.status" placeholder="请选择" clearable>
+            <el-option label="草稿" value="DRAFT" />
+            <el-option label="已提交" value="SUBMITTED" />
+            <el-option label="核保中" value="UNDERWRITING" />
+            <el-option label="核保通过" value="APPROVED" />
+            <el-option label="已出单" value="POLICY_ISSUED" />
+            <el-option label="核保拒绝" value="REJECTED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+    
     <el-card>
       <el-table :data="tableData" border stripe>
         <el-table-column prop="applicationNo" label="投保单号" width="150" />
@@ -48,8 +74,8 @@
       
       <div class="pagination">
         <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
+          v-model:current-page="queryForm.pageNum"
+          v-model:page-size="queryForm.pageSize"
           :total="total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
@@ -137,9 +163,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api'
 
 const tableData = ref([])
-const currentPage = ref(1)
-const pageSize = ref(10)
 const total = ref(0)
+const queryForm = ref({
+  pageNum: 1,
+  pageSize: 10,
+  applicationNo: '',
+  productName: '',
+  status: ''
+})
 const customerMap = ref({})
 const detailVisible = ref(false)
 const currentDetail = ref(null)
@@ -209,10 +240,7 @@ const getStatusText = (status) => {
 
 const loadData = async () => {
   try {
-    const response = await request.post('/application/page', {
-      pageNum: currentPage.value,
-      pageSize: pageSize.value
-    })
+    const response = await request.post('/application/page', queryForm.value)
     if (response.data.code === 200) {
       tableData.value = response.data.data.records || []
       total.value = response.data.data.total || 0
@@ -220,6 +248,22 @@ const loadData = async () => {
   } catch (error) {
     ElMessage.error('加载数据失败')
   }
+}
+
+const handleSearch = () => {
+  queryForm.value.pageNum = 1
+  loadData()
+}
+
+const handleReset = () => {
+  queryForm.value = {
+    pageNum: 1,
+    pageSize: 10,
+    applicationNo: '',
+    productName: '',
+    status: ''
+  }
+  loadData()
 }
 
 const loadProducts = async () => {
@@ -354,12 +398,12 @@ const handleView = (row) => {
 }
 
 const handleSizeChange = (val) => {
-  pageSize.value = val
+  queryForm.value.pageSize = val
   loadData()
 }
 
 const handleCurrentChange = (val) => {
-  currentPage.value = val
+  queryForm.value.pageNum = val
   loadData()
 }
 </script>
@@ -378,6 +422,10 @@ const handleCurrentChange = (val) => {
 
 .page-header h2 {
   margin: 0;
+}
+
+.search-card {
+  margin-bottom: 20px;
 }
 
 .pagination {

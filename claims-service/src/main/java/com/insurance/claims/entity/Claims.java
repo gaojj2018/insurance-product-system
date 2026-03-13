@@ -1,6 +1,7 @@
 package com.insurance.claims.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,8 +11,10 @@ import java.time.LocalDateTime;
 public class Claims {
     
     @TableId(type = IdType.AUTO)
+    @JsonProperty("claimsId")
     private Long claimsId;
     
+    @JsonProperty("claimNo")
     private String claimsNo;
     
     private Long policyId;
@@ -20,6 +23,7 @@ public class Claims {
     
     private Long applicantId;
     
+    @JsonProperty("claimantName")
     private String applicantName;
     
     private String accidentType;
@@ -30,10 +34,13 @@ public class Claims {
     
     private String accidentDesc;
     
+    @JsonProperty("claimAmount")
     private BigDecimal claimAmount;
     
+    @JsonProperty("approveAmount")
     private BigDecimal approvedAmount;
     
+    @JsonProperty("claimStatus")
     private String status;
     
     private String handler;

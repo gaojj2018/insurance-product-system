@@ -239,7 +239,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="条款内容" prop="content">
-          <el-input v-model="clauseForm.content" type="textarea" :rows="6" placeholder="请输入条款内容" />
+          <el-input v-model="clauseForm.clauseContent" type="textarea" :rows="6" placeholder="请输入条款内容" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -265,13 +265,28 @@
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="保额" prop="coverageAmount">
-              <el-input-number v-model="coverageForm.coverageAmount" :min="0" :step="1000" style="width: 100%" />
+            <el-form-item label="最低保额" prop="minSumInsured">
+              <el-input-number v-model="coverageForm.minSumInsured" :min="0" :step="1000" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="保费" prop="premium">
-              <el-input-number v-model="coverageForm.premium" :min="0" :step="100" style="width: 100%" />
+            <el-form-item label="最高保额" prop="maxSumInsured">
+              <el-input-number v-model="coverageForm.maxSumInsured" :min="0" :step="1000" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="基准费率" prop="basePremiumRate">
+              <el-input-number v-model="coverageForm.basePremiumRate" :min="0" :precision="4" :step="0.0001" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="计算方式" prop="calculationType">
+              <el-select v-model="coverageForm.calculationType" placeholder="请选择" style="width: 100%">
+                <el-option label="固定" value="FIXED" />
+                <el-option label="比例" value="PERCENTAGE" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -347,7 +362,7 @@ const clauseForm = ref({
   clauseCode: '',
   clauseName: '',
   clauseType: 'BASIC',
-  content: ''
+  clauseContent: ''
 })
 const clauseRules = {
   clauseCode: [{ required: true, message: '请输入条款代码', trigger: 'blur' }],
@@ -365,8 +380,11 @@ const coverageForm = ref({
   coverageCode: '',
   coverageName: '',
   coverageType: 'MAIN',
-  coverageAmount: 0,
-  premium: 0
+  coverageKind: 'MAIN',
+  minSumInsured: 0,
+  maxSumInsured: 0,
+  basePremiumRate: 0,
+  calculationType: 'FIXED'
 })
 const coverageRules = {
   coverageCode: [{ required: true, message: '请输入险种代码', trigger: 'blur' }],
@@ -602,6 +620,25 @@ const handleStop = async (row) => {
     loadData()
   } catch (error) {
     console.error('停售失败', error)
+  }
+}
+
+// 删除产品
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定删除该产品吗？', '提示', { type: 'warning' })
+    const res = await deleteProduct(row.productId)
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      const errorMsg = error?.response?.data?.message || error?.message || '删除失败'
+      ElMessage.error(errorMsg)
+    }
   }
 }
 

@@ -98,8 +98,17 @@ public class CustomerController {
     
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        boolean success = customerService.deleteCustomer(id);
+        var references = customerService.checkBusinessReferences(id);
+        
         Map<String, Object> result = new HashMap<>();
+        if (!references.isEmpty()) {
+            result.put("code", 400);
+            result.put("message", "该客户有关联的业务记录，无法删除");
+            result.put("data", references);
+            return ResponseEntity.ok(result);
+        }
+        
+        boolean success = customerService.deleteCustomer(id);
         if (success) {
             result.put("code", 200);
             result.put("message", "删除成功");

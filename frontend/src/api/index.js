@@ -299,4 +299,20 @@ export const assignRolePermission = (data) => {
   return request.post('/role/assignPermission', data)
 }
 
+export const getClaimsList = (params) => {
+  return request.post('/claims/page', null, { params })
+}
+
+export const getClaimsById = (id) => {
+  return request.get(`/claims/${id}`)
+}
+
+export const deleteClaims = (id) => {
+  return request.delete(`/claims/${id}`)
+}
+
+export const getPolicyList = (params) => {
+  return request.post('/policy/page', null, { params })
+}
+
 export default request

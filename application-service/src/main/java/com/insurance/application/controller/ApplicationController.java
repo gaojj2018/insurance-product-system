@@ -44,11 +44,14 @@ public class ApplicationController {
     }
     
     @PostMapping("/page")
-    public ResponseEntity<Map<String, Object>> getPage(
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String status) {
-        IPage<Application> page = applicationService.getApplicationPage(pageNum, pageSize, status);
+    public ResponseEntity<Map<String, Object>> getPage(@RequestBody Map<String, Object> params) {
+        int pageNum = params.containsKey("pageNum") ? Integer.parseInt(params.get("pageNum").toString()) : 1;
+        int pageSize = params.containsKey("pageSize") ? Integer.parseInt(params.get("pageSize").toString()) : 10;
+        String status = params.containsKey("status") ? params.get("status").toString() : null;
+        String applicationNo = params.containsKey("applicationNo") ? params.get("applicationNo").toString() : null;
+        String productName = params.containsKey("productName") ? params.get("productName").toString() : null;
+        
+        IPage<Application> page = applicationService.getApplicationPage(pageNum, pageSize, status, applicationNo, productName);
         Map<String, Object> response = new HashMap<>();
         response.put("code", 200);
         response.put("data", page);
@@ -136,6 +139,26 @@ public class ApplicationController {
     @GetMapping("/applicant/{applicantId}")
     public ResponseEntity<Map<String, Object>> getByApplicant(@PathVariable Long applicantId) {
         var applications = applicationService.getApplicationsByApplicant(applicantId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", applications);
+        response.put("message", "查询成功");
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<Map<String, Object>> getByProductId(@PathVariable Long productId) {
+        var applications = applicationService.getApplicationsByProductId(productId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", applications);
+        response.put("message", "查询成功");
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<Map<String, Object>> getByCustomerId(@PathVariable Long customerId) {
+        var applications = applicationService.getApplicationsByCustomerId(customerId);
         Map<String, Object> response = new HashMap<>();
         response.put("code", 200);
         response.put("data", applications);

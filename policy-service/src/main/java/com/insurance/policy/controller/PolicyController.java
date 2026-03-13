@@ -102,6 +102,26 @@ public class PolicyController {
         return ResponseEntity.ok(response);
     }
     
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<Map<String, Object>> getByProductId(@PathVariable Long productId) {
+        var list = policyService.getByProductId(productId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", list);
+        response.put("message", "查询成功");
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<Map<String, Object>> getByCustomerId(@PathVariable Long customerId) {
+        var list = policyService.getByCustomerId(customerId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", list);
+        response.put("message", "查询成功");
+        return ResponseEntity.ok(response);
+    }
+    
     @PutMapping("/{id}/status")
     public ResponseEntity<Map<String, Object>> updateStatus(
             @PathVariable Long id,
@@ -158,5 +178,39 @@ public class PolicyController {
             response.put("message", "创建失败: " + e.getMessage());
             return ResponseEntity.ok(response);
         }
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+        var references = policyService.checkBusinessReferences(id);
+        
+        Map<String, Object> result = new HashMap<>();
+        if (!references.isEmpty()) {
+            result.put("code", 400);
+            result.put("message", "该保单有关联的业务记录，无法删除");
+            result.put("data", references);
+            return ResponseEntity.ok(result);
+        }
+        
+        boolean success = policyService.removeById(id);
+        result.put("code", success ? 200 : 500);
+        result.put("message", success ? "删除成功" : "删除失败");
+        return ResponseEntity.ok(result);
+    }
+    
+    @PutMapping("/{id}/surrender")
+    public ResponseEntity<Map<String, Object>> surrender(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+        boolean success = policyService.surrender(id, reason);
+        Map<String, Object> result = new HashMap<>();
+        if (success) {
+            result.put("code", 200);
+            result.put("message", "退保成功");
+        } else {
+            result.put("code", 400);
+            result.put("message", "退保失败，保单不存在或状态不允许退保");
+        }
+        return ResponseEntity.ok(result);
     }
 }

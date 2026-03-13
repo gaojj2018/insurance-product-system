@@ -37,7 +37,7 @@
         <!-- 表格区域 -->
         <el-card>
           <el-table :data="tableData" border stripe v-loading="loading">
-            <el-table-column prop="paymentId" label="ID" width="80" />
+            <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="policyNo" label="保单号" width="150" />
             <el-table-column prop="customerName" label="客户姓名" width="100" />
             <el-table-column prop="productName" label="产品名称" min-width="150" />
@@ -85,7 +85,7 @@
         <!-- 理赔款表格 -->
         <el-card>
           <el-table :data="tableData" border stripe v-loading="loading">
-            <el-table-column prop="claimPaymentId" label="ID" width="80" />
+            <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="claimNo" label="理赔批号" width="150" />
             <el-table-column prop="policyNo" label="保单号" width="150" />
             <el-table-column prop="customerName" label="客户姓名" width="100" />
@@ -252,14 +252,14 @@ const loadData = async () => {
     // 模拟数据
     if (activeTab.value === 'premium') {
       tableData.value = [
-        { paymentId: 1, policyNo: 'POL202603001', customerName: '张三', productName: '平安福终身寿险', premium: 12580, paymentNo: 'PAY2026030101', dueDate: '2026-03-15', paidDate: '2026-03-01', paymentStatus: 'PAID' },
-        { paymentId: 2, policyNo: 'POL202603002', customerName: '李四', productName: '健康安康医疗保险', premium: 3680, paymentNo: 'PAY2026030102', dueDate: '2026-03-20', paidDate: '', paymentStatus: 'PENDING' },
-        { paymentId: 3, policyNo: 'POL202603003', customerName: '王五', productName: '意外保障计划', premium: 1580, paymentNo: 'PAY2026030103', dueDate: '2026-03-10', paidDate: '', paymentStatus: 'OVERDUE' }
+        { id: 1, policyNo: 'POL202603001', customerName: '张三', productName: '平安福终身寿险', premium: 12580, paymentNo: 'PAY2026030101', dueDate: '2026-03-15', paidDate: '2026-03-01', paymentStatus: 'PAID' },
+        { id: 2, policyNo: 'POL202603002', customerName: '李四', productName: '健康安康医疗保险', premium: 3680, paymentNo: 'PAY2026030102', dueDate: '2026-03-20', paidDate: '', paymentStatus: 'PENDING' },
+        { id: 3, policyNo: 'POL202603003', customerName: '王五', productName: '意外保障计划', premium: 1580, paymentNo: 'PAY2026030103', dueDate: '2026-03-10', paidDate: '', paymentStatus: 'OVERDUE' }
       ]
     } else if (activeTab.value === 'claim') {
       tableData.value = [
-        { claimPaymentId: 1, claimNo: 'CLM202603001', policyNo: 'POL202501001', customerName: '赵六', claimAmount: 15000, paymentMethod: 'BANK_TRANSFER', accountNo: '6222***********1234', paymentStatus: 'PAID' },
-        { claimPaymentId: 2, claimNo: 'CLM202603002', policyNo: 'POL202502015', customerName: '孙七', claimAmount: 8500, paymentMethod: 'BANK_TRANSFER', accountNo: '6210***********5678', paymentStatus: 'PENDING' }
+        { id: 1, claimNo: 'CLM202603001', policyNo: 'POL202501001', customerName: '赵六', claimAmount: 15000, paymentMethod: 'BANK_TRANSFER', accountNo: '6222***********1234', paymentStatus: 'PAID' },
+        { id: 2, claimNo: 'CLM202603002', policyNo: 'POL202502015', customerName: '孙七', claimAmount: 8500, paymentMethod: 'BANK_TRANSFER', accountNo: '6210***********5678', paymentStatus: 'PENDING' }
       ]
     }
     total.value = tableData.value.length
@@ -299,7 +299,7 @@ const handleView = (row) => {
 
 const handleConfirm = async (row) => {
   try {
-    await confirmPremium(row.paymentId)
+    await confirmPremium(row.id)
     ElMessage.success('确认成功')
     loadData()
   } catch (error) {
@@ -309,7 +309,7 @@ const handleConfirm = async (row) => {
 
 const handlePay = async (row) => {
   try {
-    await payClaim(row.claimPaymentId)
+    await payClaim(row.id)
     ElMessage.success('支付成功')
     loadData()
   } catch (error) {

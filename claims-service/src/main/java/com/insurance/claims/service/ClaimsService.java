@@ -3,6 +3,7 @@ package com.insurance.claims.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.insurance.claims.client.FinanceClient;
 import com.insurance.claims.entity.Claims;
 import com.insurance.claims.repository.ClaimsRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 @Service
@@ -19,6 +23,7 @@ import java.util.Random;
 public class ClaimsService {
     
     private final ClaimsRepository claimsRepository;
+    private final FinanceClient financeClient;
     
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final Random RANDOM = new Random();
@@ -28,7 +33,7 @@ public class ClaimsService {
                                String accidentType, LocalDateTime accidentDate, String accidentLocation,
                                String accidentDesc, BigDecimal claimAmount) {
         Claims claims = new Claims();
-        claims.setClaimsNo("CLM" + LocalDateTime.now().format(FORMATTER) + String.format("%04d", RANDOM.nextInt(10000)));
+        claims.setClaimsNo("C" + LocalDateTime.now().format(FORMATTER) + String.format("%04d", RANDOM.nextInt(10000)));
         claims.setPolicyId(policyId);
         claims.setPolicyNo(policyNo);
         claims.setApplicantId(applicantId);
@@ -84,8 +89,29 @@ public class ClaimsService {
             claims.setPayAccount(payAccount);
             claims.setPayTime(LocalDateTime.now());
             claimsRepository.updateById(claims);
+            
+            // Sync to finance - create accounting record
+            try {
+                Map<String, Object> record = new HashMap<>();
+                record.put("policyNo", claims.getPolicyNo());
+                record.put("transactionType", "CLAIM_PAYMENT");
+                record.put("amount", claims.getApprovedAmount() != null ? claims.getApprovedAmount() : claims.getClaimAmount());
+                record.put("paymentMethod", "BANK_TRANSFER");
+                record.put("accountNo", payAccount);
+                record.put("transactionStatus", "COMPLETED");
+                record.put("remark", "理赔付款 - " + claims.getClaimsNo());
+                financeClient.createAccountingRecord(record);
+            } catch (Exception e) {
+                // Log error but don't fail the payment
+                e.printStackTrace();
+            }
         }
         return claims;
+    }
+    
+    @Transactional
+    public boolean deleteClaims(Long id) {
+        return claimsRepository.deleteById(id) > 0;
     }
     
     @Transactional
@@ -98,5 +124,12 @@ public class ClaimsService {
             claimsRepository.updateById(claims);
         }
         return claims;
+    }
+    
+    public List<Claims> getByPolicyId(Long policyId) {
+        LambdaQueryWrapper<Claims> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Claims::getPolicyId, policyId);
+        wrapper.notIn(Claims::getStatus, "REJECTED", "CLOSED");
+        return claimsRepository.selectList(wrapper);
     }
 }

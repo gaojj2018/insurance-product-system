@@ -1,34 +1,35 @@
 @echo off
+chcp 65001 >nul
 echo ================================
-echo 保险核心系统 - 前端打包部署
+echo Insurance System - Frontend Build
 echo ================================
 
 cd /d %~dp0frontend
 
 echo.
-echo [1/3] 安装依赖...
+echo [1/3] Installing dependencies...
 call npm install
 
 echo.
-echo [2/3] 打包前端...
+echo [2/3] Building frontend...
 call npm run build
 
 echo.
-echo [3/3] 复制到Nginx...
+echo [3/3] Copying to Nginx...
 if exist "dist\index.html" (
-    if exist "..\nginx\html" (
-        rd /s /q "..\nginx\html" 2>nul
-        xcopy /e /y /q "dist" "..\nginx\html\"
+    if exist "C:\nginx\html" (
+        rd /s /q "C:\nginx\html" 2>nul
+        xcopy /e /y /q "dist" "C:\nginx\html\"
         echo.
         echo ================================
-        echo 部署完成！
-        echo 访问地址: http://localhost
+        echo Build completed!
+        echo Access: http://localhost
         echo ================================
     ) else (
-        echo [错误] Nginx目录不存在
+        echo [Error] Nginx directory not found
     )
 ) else (
-    echo [错误] 打包失败，未生成dist目录
+    echo [Error] Build failed, dist folder not found
 )
 
 pause

@@ -106,9 +106,17 @@ public class ProductController {
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long productId) {
-        boolean success = productService.removeById(productId);
+        var references = productService.checkBusinessReferences(productId);
         
         Map<String, Object> result = new HashMap<>();
+        if (!references.isEmpty()) {
+            result.put("code", 400);
+            result.put("message", "该产品有关联的业务记录，无法删除");
+            result.put("data", references);
+            return ResponseEntity.ok(result);
+        }
+        
+        boolean success = productService.removeById(productId);
         result.put("code", success ? 200 : 500);
         result.put("message", success ? "删除成功" : "删除失败");
         

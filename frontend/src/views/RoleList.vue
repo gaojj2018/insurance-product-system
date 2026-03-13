@@ -1,7 +1,24 @@
 <template>
   <div class="role-container">
+    <!-- 搜索区域 -->
     <el-card class="search-card">
-      <el-form :inline="true">
+      <el-form :model="queryForm" inline>
+        <el-form-item label="角色代码">
+          <el-input v-model="queryForm.roleCode" placeholder="请输入角色代码" clearable />
+        </el-form-item>
+        <el-form-item label="角色名称">
+          <el-input v-model="queryForm.roleName" placeholder="请输入角色名称" clearable />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="queryForm.status" placeholder="请选择" clearable>
+            <el-option label="启用" value="ACTIVE" />
+            <el-option label="停用" value="INACTIVE" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleAdd">新增角色</el-button>
         </el-form-item>
@@ -89,7 +106,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getRoleList, createRole, updateRole, deleteRole, getPermissionTree, getRolePermissions, assignRolePermission } from '@/api'
+import { getRoleList, getRolePage, createRole, updateRole, deleteRole, getPermissionTree, getRolePermissions, assignRolePermission } from '@/api'
 
 const permDialogVisible = ref(false)
 const permTree = ref()
@@ -134,6 +151,11 @@ const handlePermSubmit = async () => {
 
 const tableData = ref([])
 const loading = ref(false)
+const queryForm = ref({
+  roleCode: '',
+  roleName: '',
+  status: ''
+})
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增角色')
 const formRef = ref()
@@ -155,13 +177,26 @@ const rules = {
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getRoleList()
-    tableData.value = res.data.data || []
+    const res = await getRolePage(queryForm.value)
+    tableData.value = res.data.data?.records || res.data.data || []
   } catch (error) {
     console.error('加载失败', error)
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  loadData()
+}
+
+const handleReset = () => {
+  queryForm.value = {
+    roleCode: '',
+    roleName: '',
+    status: ''
+  }
+  loadData()
 }
 
 const handleAdd = () => {

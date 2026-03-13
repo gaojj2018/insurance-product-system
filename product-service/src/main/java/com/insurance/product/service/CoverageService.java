@@ -38,7 +38,7 @@ public class CoverageService extends ServiceImpl<CoverageRepository, Coverage> {
     public List<Coverage> listByProductId(Long productId) {
         LambdaQueryWrapper<Coverage> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Coverage::getProductId, productId);
-        wrapper.eq(Coverage::getStatus, "ACTIVE");
+        wrapper.in(Coverage::getStatus, "DRAFT", "ACTIVE");
         wrapper.orderByAsc(Coverage::getCoverageId);
         return this.list(wrapper);
     }

@@ -154,11 +154,17 @@ public class ApplicationService {
         return application;
     }
     
-    public IPage<Application> getApplicationPage(int pageNum, int pageSize, String status) {
+    public IPage<Application> getApplicationPage(int pageNum, int pageSize, String status, String applicationNo, String productName) {
         Page<Application> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
         if (status != null && !status.isEmpty()) {
             wrapper.eq(Application::getStatus, status);
+        }
+        if (applicationNo != null && !applicationNo.isEmpty()) {
+            wrapper.like(Application::getApplicationNo, applicationNo);
+        }
+        if (productName != null && !productName.isEmpty()) {
+            wrapper.like(Application::getProductName, productName);
         }
         wrapper.orderByDesc(Application::getCreatedTime);
         return applicationRepository.selectPage(page, wrapper);
@@ -250,6 +256,31 @@ public class ApplicationService {
     public List<Application> getApplicationsByApplicant(Long applicantId) {
         LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Application::getApplicantId, applicantId);
+        wrapper.orderByDesc(Application::getCreatedTime);
+        return applicationRepository.selectList(wrapper);
+    }
+    
+    /**
+     * 根据产品ID查询投保单（排除已拒绝、已退保的）
+     */
+    public List<Application> getApplicationsByProductId(Long productId) {
+        LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Application::getProductId, productId);
+        // 排除已拒绝和已退保的状态
+        wrapper.notIn(Application::getStatus, "REJECTED", "CANCELLED", "WITHDRAWN");
+        wrapper.orderByDesc(Application::getCreatedTime);
+        return applicationRepository.selectList(wrapper);
+    }
+    
+    /**
+     * 根据客户ID查询投保单（作为投保人或被保人）
+     */
+    public List<Application> getApplicationsByCustomerId(Long customerId) {
+        LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
+        wrapper.and(w -> w.eq(Application::getApplicantId, customerId)
+                       .or().eq(Application::getInsuredId, customerId));
+        // 排除已拒绝、已退保的状态
+        wrapper.notIn(Application::getStatus, "REJECTED", "CANCELLED", "WITHDRAWN");
         wrapper.orderByDesc(Application::getCreatedTime);
         return applicationRepository.selectList(wrapper);
     }

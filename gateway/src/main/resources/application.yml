@@ -118,8 +118,6 @@ spring:
           uri: lb://auth-service
           predicates:
             - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
 
         # 用户管理
         - id: user-service
@@ -129,19 +127,19 @@ spring:
 
         # 角色管理
         - id: role-service
-          uri: lb://auth-service
+          uri: http://localhost:8092
           predicates:
             - Path=/api/role/**
 
         # 机构管理
         - id: org-service
-          uri: lb://auth-service
+          uri: http://localhost:8092
           predicates:
             - Path=/api/org/**
 
         # 权限管理
         - id: permission-service
-          uri: lb://auth-service
+          uri: http://localhost:8092
           predicates:
             - Path=/api/permission/**
 

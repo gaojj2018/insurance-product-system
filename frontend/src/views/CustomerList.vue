@@ -61,7 +61,7 @@
             <el-tag v-else type="info">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="success" size="small" @click="handleView(row)">详情</el-button>
@@ -73,6 +73,7 @@
             >
               {{ row.status === 'ACTIVE' ? '冻结' : '解冻' }}
             </el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -93,16 +94,16 @@
 
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
+      <el-form :model="form" :rules="form.readOnly ? {} : rules" ref="formRef" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="客户姓名" prop="customerName">
-              <el-input v-model="form.customerName" placeholder="请输入客户姓名" />
+              <el-input v-model="form.customerName" placeholder="请输入客户姓名" :disabled="form.readOnly" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="客户类型" prop="customerType">
-              <el-select v-model="form.customerType" placeholder="请选择" style="width: 100%">
+              <el-select v-model="form.customerType" placeholder="请选择" style="width: 100%" :disabled="form.readOnly">
                 <el-option label="个人" value="PERSONAL" />
                 <el-option label="企业" value="CORPORATE" />
               </el-select>
@@ -112,7 +113,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="证件类型" prop="idType">
-              <el-select v-model="form.idType" placeholder="请选择" style="width: 100%">
+              <el-select v-model="form.idType" placeholder="请选择" style="width: 100%" :disabled="form.readOnly">
                 <el-option label="身份证" value="ID_CARD" />
                 <el-option label="护照" value="PASSPORT" />
                 <el-option label="营业执照" value="BUSINESS_LICENSE" />
@@ -121,29 +122,29 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="证件号码" prop="idNo">
-              <el-input v-model="form.idNo" placeholder="请输入证件号码" />
+              <el-input v-model="form.idNo" placeholder="请输入证件号码" :disabled="form.readOnly" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="联系电话" prop="mobile">
-              <el-input v-model="form.mobile" placeholder="请输入联系电话" />
+              <el-input v-model="form.mobile" placeholder="请输入联系电话" :disabled="form.readOnly" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="邮箱" prop="email">
-              <el-input v-model="form.email" placeholder="请输入邮箱" />
+              <el-input v-model="form.email" placeholder="请输入邮箱" :disabled="form.readOnly" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入地址" />
+          <el-input v-model="form.address" placeholder="请输入地址" :disabled="form.readOnly" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ form.readOnly ? '关闭' : '取消' }}</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting" v-if="!form.readOnly">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -152,7 +153,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '@/api'
+import request, { deleteCustomer } from '@/api'
 
 // 查询表单
 const queryForm = ref({
@@ -254,7 +255,8 @@ const handleAdd = () => {
     mobile: '',
     email: '',
     address: '',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    readOnly: false
   }
   dialogVisible.value = true
 }
@@ -262,7 +264,7 @@ const handleAdd = () => {
 // 编辑
 const handleEdit = (row) => {
   dialogTitle.value = '编辑客户'
-  form.value = { ...row }
+  form.value = { ...row, readOnly: false }
   dialogVisible.value = true
 }
 
@@ -327,6 +329,25 @@ const handleToggleStatus = async (row) => {
   } catch (e) {
     if (e !== 'cancel') {
       ElMessage.error(`${action}失败`)
+    }
+  }
+}
+
+// 删除客户
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定删除该客户吗？', '提示', { type: 'warning' })
+    const res = await deleteCustomer(row.id)
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      const errorMsg = error?.response?.data?.message || error?.message || '删除失败'
+      ElMessage.error(errorMsg)
     }
   }
 }

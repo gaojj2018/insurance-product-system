@@ -40,7 +40,13 @@ public class SysOrgService {
     
     private List<SysOrg> buildTree(List<SysOrg> list, Long parentId) {
         return list.stream()
-            .filter(item -> item.getParentId().equals(parentId))
+            .filter(item -> {
+                Long itemParentId = item.getParentId();
+                if (parentId == null) {
+                    return itemParentId == null || itemParentId.equals(0L);
+                }
+                return parentId.equals(itemParentId);
+            })
             .peek(item -> item.setChildren(buildTree(list, item.getId())))
             .toList();
     }
@@ -51,17 +57,22 @@ public class SysOrgService {
     
     public SysOrg create(SysOrg org) {
         if (org.getOrgCode() == null || org.getOrgCode().isEmpty()) {
-            List<SysOrg> existingOrgs = sysOrgMapper.selectList(null);
+            // Find max org code - query all non-deleted orgs and find max numerically
+            LambdaQueryWrapper<SysOrg> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SysOrg::getDeleted, 0);
+            List<SysOrg> allOrgs = sysOrgMapper.selectList(wrapper);
+            
             int maxNum = 0;
-            for (SysOrg o : existingOrgs) {
-                if (o.getOrgCode() != null && o.getOrgCode().startsWith("ORG")) {
+            for (SysOrg o : allOrgs) {
+                String code = o.getOrgCode();
+                if (code != null && code.startsWith("ORG")) {
                     try {
-                        int num = Integer.parseInt(o.getOrgCode().replace("ORG", ""));
+                        int num = Integer.parseInt(code.substring(3));
                         if (num > maxNum) {
                             maxNum = num;
                         }
                     } catch (NumberFormatException e) {
-                        
+                        // ignore
                     }
                 }
             }
@@ -71,7 +82,10 @@ public class SysOrgService {
         if (org.getParentId() != null && org.getParentId() > 0) {
             SysOrg parent = sysOrgMapper.selectById(org.getParentId());
             if (parent != null) {
-                org.setParentPath(parent.getParentPath() + "/");
+                String parentPath = parent.getParentPath();
+                org.setParentPath(parentPath != null ? parentPath + "/" + org.getParentId() : "/0/" + org.getParentId());
+            } else {
+                org.setParentPath("/0");
             }
         } else {
             org.setParentPath("/0");

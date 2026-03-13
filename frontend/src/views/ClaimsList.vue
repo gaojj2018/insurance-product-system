@@ -5,6 +5,34 @@
       <el-button type="primary" @click="handleCreate">新建理赔</el-button>
     </div>
     
+    <!-- 搜索区域 -->
+    <el-card class="search-card">
+      <el-form :model="queryForm" inline>
+        <el-form-item label="理赔单号">
+          <el-input v-model="queryForm.claimNo" placeholder="请输入理赔单号" clearable />
+        </el-form-item>
+        <el-form-item label="保单号">
+          <el-input v-model="queryForm.policyNo" placeholder="请输入保单号" clearable />
+        </el-form-item>
+        <el-form-item label="申请人">
+          <el-input v-model="queryForm.claimantName" placeholder="请输入申请人" clearable />
+        </el-form-item>
+        <el-form-item label="理赔状态">
+          <el-select v-model="queryForm.claimStatus" placeholder="请选择" clearable>
+            <el-option label="已报案" value="REPORTED" />
+            <el-option label="处理中" value="PROCESSING" />
+            <el-option label="已审核" value="APPROVED" />
+            <el-option label="已付款" value="PAID" />
+            <el-option label="已拒绝" value="REJECTED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+    
     <el-card>
       <el-table :data="tableData" border stripe>
         <el-table-column prop="claimNo" label="理赔单号" width="150" />
@@ -29,19 +57,20 @@
           </template>
         </el-table-column>
         <el-table-column prop="accidentDate" label="事故日期" width="120" />
-        <el-table-column label="操作" fixed="right" width="200">
+        <el-table-column label="操作" fixed="right" width="250">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button link type="success" size="small" @click="handleProcess(row)" v-if="row.claimStatus === 'REPORTED'">处理</el-button>
             <el-button link type="warning" size="small" @click="handlePay(row)" v-if="row.claimStatus === 'APPROVED'">付款</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
       
       <div class="pagination">
         <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
+          v-model:current-page="queryForm.pageNum"
+          v-model:page-size="queryForm.pageSize"
           :total="total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
@@ -111,7 +140,26 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="保单号" prop="policyNo">
-              <el-input v-model="createForm.policyNo" placeholder="请输入保单号" />
+              <el-select 
+                v-model="createForm.policyId" 
+                placeholder="请选择保单" 
+                style="width: 100%"
+                filterable
+                :loading="policyLoading"
+                @change="handlePolicyChange"
+              >
+                <el-option
+                  v-for="policy in policyList"
+                  :key="policy.policyId"
+                  :label="policy.policyNo"
+                  :value="policy.policyId"
+                >
+                  <span>{{ policy.policyNo }}</span>
+                  <span style="color: #999; font-size: 12px; margin-left: 8px">
+                    ({{ policy.productName || '未知产品' }})
+                  </span>
+                </el-option>
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -173,11 +221,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import request from '@/api/index'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import request, { deleteClaims, getPolicyList } from '@/api/index'
 
 const claimFileList = ref([])
 const claimUploadedFiles = ref([])
+const policyList = ref([])
+const policyLoading = ref(false)
 
 const handleClaimFileChange = (file, files) => {
   if (file.size > 10 * 1024 * 1024) {
@@ -194,10 +244,37 @@ const handleClaimFileRemove = (file, files) => {
   }
 }
 
+const loadPolicyList = async () => {
+  policyLoading.value = true
+  try {
+    const res = await getPolicyList({ pageNum: 1, pageSize: 100 })
+    if (res.data.code === 200) {
+      policyList.value = res.data.data.records || []
+    }
+  } catch (error) {
+    console.error('加载保单列表失败', error)
+  } finally {
+    policyLoading.value = false
+  }
+}
+
+const handlePolicyChange = (policyId) => {
+  const selectedPolicy = policyList.value.find(p => p.policyId === policyId)
+  if (selectedPolicy) {
+    createForm.value.policyNo = selectedPolicy.policyNo
+  }
+}
+
 const tableData = ref([])
-const currentPage = ref(1)
-const pageSize = ref(10)
 const total = ref(0)
+const queryForm = ref({
+  pageNum: 1,
+  pageSize: 10,
+  claimNo: '',
+  policyNo: '',
+  claimantName: '',
+  claimStatus: ''
+})
 const detailVisible = ref(false)
 const currentDetail = ref(null)
 const processVisible = ref(false)
@@ -219,6 +296,7 @@ const payForm = ref({
 })
 
 const createForm = ref({
+  policyId: null,
   policyNo: '',
   applicantName: '',
   accidentType: '',
@@ -229,7 +307,7 @@ const createForm = ref({
 })
 
 const createRules = {
-  policyNo: [{ required: true, message: '请输入保单号', trigger: 'blur' }],
+  policyId: [{ required: true, message: '请选择保单', trigger: 'change' }],
   applicantName: [{ required: true, message: '请输入申请人', trigger: 'blur' }],
   accidentType: [{ required: true, message: '请选择事故类型', trigger: 'change' }],
   accidentDate: [{ required: true, message: '请选择事故日期', trigger: 'change' }],
@@ -264,10 +342,7 @@ const getStatusText = (status) => {
 
 const loadData = async () => {
   try {
-    const response = await request.post('/claims/page', {
-      pageNum: currentPage.value,
-      pageSize: pageSize.value
-    })
+    const response = await request.post('/claims/page', queryForm.value)
     if (response.data.code === 200) {
       tableData.value = response.data.data.records || []
       total.value = response.data.data.total || 0
@@ -277,6 +352,23 @@ const loadData = async () => {
   }
 }
 
+const handleSearch = () => {
+  queryForm.value.pageNum = 1
+  loadData()
+}
+
+const handleReset = () => {
+  queryForm.value = {
+    pageNum: 1,
+    pageSize: 10,
+    claimNo: '',
+    policyNo: '',
+    claimantName: '',
+    claimStatus: ''
+  }
+  loadData()
+}
+
 const handleView = (row) => {
   currentDetail.value = row
   detailVisible.value = true
@@ -284,6 +376,7 @@ const handleView = (row) => {
 
 const handleCreate = () => {
   createForm.value = {
+    policyId: null,
     policyNo: '',
     applicantName: '',
     accidentType: '',
@@ -294,11 +387,12 @@ const handleCreate = () => {
   }
   claimFileList.value = []
   claimUploadedFiles.value = []
+  loadPolicyList()
   createVisible.value = true
 }
 
 const handleSubmitClaim = async () => {
-  if (!createForm.value.policyNo || !createForm.value.applicantName) {
+  if (!createForm.value.policyId || !createForm.value.applicantName) {
     ElMessage.warning('请填写完整信息')
     return
   }
@@ -308,7 +402,7 @@ const handleSubmitClaim = async () => {
       new Date(createForm.value.accidentDate).toISOString().slice(0,10) : ''
     const res = await request.post('/claims', null, {
       params: {
-        policyId: 1,
+        policyId: createForm.value.policyId,
         policyNo: createForm.value.policyNo,
         applicantId: 1,
         applicantName: createForm.value.applicantName,
@@ -354,7 +448,7 @@ const handleSubmitClaim = async () => {
 
 const handleProcess = (row) => {
   processForm.value = {
-    claimId: row.claimId,
+    claimId: row.claimsId,
     claimNo: row.claimNo,
     approvedAmount: row.claimAmount,
     opinion: ''
@@ -364,7 +458,7 @@ const handleProcess = (row) => {
 
 const handleApprove = async () => {
   try {
-    const res = await request.put(`/api/claims/${processForm.value.claimId}/approve`, null, {
+    const res = await request.put(`/claims/${processForm.value.claimId}/approve`, null, {
       params: {
         approvedAmount: processForm.value.approvedAmount,
         handler: 'admin'
@@ -382,7 +476,7 @@ const handleApprove = async () => {
 
 const handleReject = async () => {
   try {
-    const res = await request.put(`/api/claims/${processForm.value.claimId}/reject`, null, {
+    const res = await request.put(`/claims/${processForm.value.claimId}/reject`, null, {
       params: {
         handler: 'admin'
       }
@@ -399,11 +493,36 @@ const handleReject = async () => {
 
 const handlePay = (row) => {
   payForm.value = {
-    claimId: row.claimId,
+    claimId: row.claimsId,
     claimNo: row.claimNo,
     payAccount: ''
   }
   payVisible.value = true
+}
+
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定删除该理赔记录吗？', '提示', { type: 'warning' })
+    await deleteClaims(row.claimsId)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+const formatStatus = (status) => {
+  const statusMap = {
+    'PENDING': '待处理',
+    'REPORTED': '已报案',
+    'PROCESSING': '处理中',
+    'APPROVED': '已审核',
+    'PAID': '已付款',
+    'REJECTED': '已拒绝'
+  }
+  return statusMap[status] || status
 }
 
 const confirmPay = async () => {
@@ -412,7 +531,7 @@ const confirmPay = async () => {
     return
   }
   try {
-    const res = await request.put(`/api/claims/${payForm.value.claimId}/pay`, null, {
+    const res = await request.put(`/claims/${payForm.value.claimId}/pay`, null, {
       params: {
         payAccount: payForm.value.payAccount
       }
@@ -428,12 +547,12 @@ const confirmPay = async () => {
 }
 
 const handleSizeChange = (val) => {
-  pageSize.value = val
+  queryForm.value.pageSize = val
   loadData()
 }
 
 const handleCurrentChange = (val) => {
-  currentPage.value = val
+  queryForm.value.pageNum = val
   loadData()
 }
 
@@ -456,6 +575,10 @@ onMounted(() => {
 
 .page-header h2 {
   margin: 0;
+}
+
+.search-card {
+  margin-bottom: 20px;
 }
 
 .pagination {

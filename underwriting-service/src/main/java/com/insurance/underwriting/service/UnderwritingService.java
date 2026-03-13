@@ -188,4 +188,45 @@ public class UnderwritingService {
             log.error("自动创建保单失败: applicationNo={}, error={}", uw.getApplicationNo(), e.getMessage(), e);
         }
     }
+    
+    public List<Map<String, Object>> checkBusinessReferences(Long underwritingId) {
+        List<Map<String, Object>> references = new ArrayList<>();
+        
+        Underwriting uw = underwritingRepository.selectById(underwritingId);
+        if (uw == null) {
+            return references;
+        }
+        
+        try {
+            Map<String, Object> appResponse = applicationClient.getApplication(uw.getApplicationId());
+            if (appResponse != null && appResponse.get("code") != null 
+                    && (Integer) appResponse.get("code") == 200) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> app = (Map<String, Object>) appResponse.get("data");
+                if (app != null && "POLICY_ISSUED".equals(app.get("status"))) {
+                    references.add(Map.of(
+                        "type", "APPLICATION",
+                        "id", app.get("applicationId"),
+                        "no", app.get("applicationNo"),
+                        "status", app.get("status"),
+                        "message", "投保单 " + app.get("applicationNo") + " 已出单，无法删除核保记录"
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            // 服务不可用时跳过检查
+        }
+        
+        return references;
+    }
+    
+    @Transactional
+    public boolean removeById(Long id) {
+        Underwriting uw = underwritingRepository.selectById(id);
+        if (uw == null) {
+            return false;
+        }
+        underwritingRepository.deleteById(id);
+        return true;
+    }
 }

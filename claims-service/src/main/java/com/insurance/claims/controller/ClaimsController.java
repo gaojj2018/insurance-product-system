@@ -8,7 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,9 +34,24 @@ public class ClaimsController {
             @RequestParam String accidentDesc,
             @RequestParam BigDecimal claimAmount) {
         
+        // Parse date - handle both date and datetime formats
+        LocalDateTime accidentDateTime;
+        try {
+            // Try full datetime format first: 2026-03-10T10:00:00
+            accidentDateTime = LocalDateTime.parse(accidentDate);
+        } catch (Exception e) {
+            try {
+                // Try date only format: 2026-03-10
+                LocalDate date = LocalDate.parse(accidentDate);
+                accidentDateTime = date.atTime(LocalTime.now());
+            } catch (Exception ex) {
+                accidentDateTime = LocalDateTime.now();
+            }
+        }
+        
         Claims claims = claimsService.createClaims(
             policyId, policyNo, applicantId, applicantName,
-            accidentType, LocalDateTime.parse(accidentDate), accidentLocation, accidentDesc, claimAmount
+            accidentType, accidentDateTime, accidentLocation, accidentDesc, claimAmount
         );
         
         Map<String, Object> response = new HashMap<>();
@@ -120,6 +138,25 @@ public class ClaimsController {
         response.put("code", 200);
         response.put("data", claims);
         response.put("message", "理赔已拒绝");
+        return ResponseEntity.ok(response);
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+        boolean success = claimsService.deleteClaims(id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", success ? 200 : 400);
+        response.put("message", success ? "删除成功" : "删除失败");
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/policy/{policyId}")
+    public ResponseEntity<Map<String, Object>> getByPolicyId(@PathVariable Long policyId) {
+        var claims = claimsService.getByPolicyId(policyId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", claims);
+        response.put("message", "查询成功");
         return ResponseEntity.ok(response);
     }
 }
