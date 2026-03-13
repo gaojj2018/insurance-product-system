@@ -148,7 +148,9 @@ const getStatusType = (status) => {
     'PENDING': 'warning',
     'UNDERWRITING': 'primary',
     'PASSED': 'success',
+    'PASS': 'success',
     'REJECTED': 'danger',
+    'REJECT': 'danger',
     'DEFERRED': 'info'
   }
   return map[status] || 'info'
@@ -159,7 +161,9 @@ const getStatusText = (status) => {
     'PENDING': '待核保',
     'UNDERWRITING': '核保中',
     'PASSED': '已通过',
+    'PASS': '已通过',
     'REJECTED': '已拒保',
+    'REJECT': '已拒保',
     'DEFERRED': '延期'
   }
   return map[status] || status
