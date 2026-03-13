@@ -1,22 +1,24 @@
 <template>
   <div class="user-container">
-    <el-card class="search-card">
-      <el-form :inline="true" :model="queryForm">
-        <el-form-item label="用户名">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>用户名</label>
           <el-input v-model="queryForm.username" placeholder="请输入用户名" clearable />
-        </el-form-item>
-        <el-form-item label="所属机构">
+        </div>
+        <div class="search-item">
+          <label>所属机构</label>
           <el-select v-model="queryForm.orgId" placeholder="请选择" clearable>
             <el-option v-for="org in orgList" :key="org.id" :label="org.orgName" :value="org.id" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
           <el-button type="primary" @click="handleAdd">新增用户</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
 
     <el-card>
       <el-table :data="tableData" v-loading="loading" border stripe>

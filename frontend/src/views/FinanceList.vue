@@ -4,28 +4,31 @@
     <el-tabs v-model="activeTab" type="border-card" @tab-change="handleTabChange">
       <el-tab-pane label="保费管理" name="premium">
         <!-- 搜索区域 -->
-        <el-card class="search-card">
-          <el-form :model="queryForm" inline>
-            <el-form-item label="保单号">
+        <div class="search-wrapper">
+          <div class="search-row">
+            <div class="search-item">
+              <label>保单号</label>
               <el-input v-model="queryForm.policyNo" placeholder="请输入保单号" clearable />
-            </el-form-item>
-            <el-form-item label="客户姓名">
+            </div>
+            <div class="search-item">
+              <label>客户姓名</label>
               <el-input v-model="queryForm.customerName" placeholder="请输入客户姓名" clearable />
-            </el-form-item>
-            <el-form-item label="缴费状态">
+            </div>
+            <div class="search-item">
+              <label>缴费状态</label>
               <el-select v-model="queryForm.paymentStatus" placeholder="请选择" clearable>
                 <el-option label="待缴费" value="PENDING" />
                 <el-option label="已缴费" value="PAID" />
                 <el-option label="逾期" value="OVERDUE" />
                 <el-option label="退费" value="REFUNDED" />
               </el-select>
-            </el-form-item>
-            <el-form-item>
+            </div>
+            <div class="search-actions">
               <el-button type="primary" @click="handleSearch">查询</el-button>
               <el-button @click="handleReset">重置</el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
+            </div>
+          </div>
+        </div>
 
         <!-- 操作按钮 -->
         <div class="toolbar">

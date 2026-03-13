@@ -1,17 +1,18 @@
 <template>
   <div class="org-container">
-    <el-card class="search-card">
-      <el-form :inline="true" :model="queryForm">
-        <el-form-item label="机构名称">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>机构名称</label>
           <el-input v-model="queryForm.keyword" placeholder="请输入机构名称" clearable />
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
           <el-button type="primary" @click="handleAdd">新增机构</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
 
     <el-card>
       <el-table :data="tableData" row-key="id" :tree-props="{children: 'children'}" v-loading="loading" border stripe>

@@ -1,33 +1,32 @@
 <template>
   <div class="customer-container">
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="客户姓名">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>客户姓名</label>
           <el-input v-model="queryForm.keyword" placeholder="请输入客户姓名/手机号" clearable />
-        </el-form-item>
-        <el-form-item label="客户类型">
+        </div>
+        <div class="search-item">
+          <label>客户类型</label>
           <el-select v-model="queryForm.customerType" placeholder="请选择" clearable>
             <el-option label="个人" value="PERSONAL" />
             <el-option label="企业" value="CORPORATE" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
+        </div>
+        <div class="search-item">
+          <label>状态</label>
           <el-select v-model="queryForm.status" placeholder="请选择" clearable>
             <el-option label="正常" value="ACTIVE" />
             <el-option label="冻结" value="FROZEN" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 操作按钮 -->
-    <div class="toolbar">
-      <el-button type="primary" @click="handleAdd">新增客户</el-button>
+          <el-button type="primary" @click="handleAdd">新增客户</el-button>
+        </div>
+      </div>
     </div>
 
     <!-- 表格区域 -->
@@ -93,7 +92,7 @@
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" top="5vh" destroy-on-close>
       <el-form :model="form" :rules="form.readOnly ? {} : rules" ref="formRef" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">

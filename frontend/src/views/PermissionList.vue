@@ -1,12 +1,12 @@
 <template>
   <div class="permission-container">
-    <el-card class="search-card">
-      <el-form :inline="true">
-        <el-form-item>
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-actions">
           <el-button type="primary" @click="handleAdd">新增权限</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
 
     <el-card>
       <el-table :data="tableData" row-key="id" :tree-props="{children: 'children'}" v-loading="loading" border stripe>

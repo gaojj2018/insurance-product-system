@@ -2,22 +2,25 @@
   <div class="page-container">
     <div class="page-header">
       <h2>理赔管理</h2>
-      <el-button type="primary" @click="handleCreate">新建理赔</el-button>
     </div>
     
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="理赔单号">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>理赔单号</label>
           <el-input v-model="queryForm.claimNo" placeholder="请输入理赔单号" clearable />
-        </el-form-item>
-        <el-form-item label="保单号">
+        </div>
+        <div class="search-item">
+          <label>保单号</label>
           <el-input v-model="queryForm.policyNo" placeholder="请输入保单号" clearable />
-        </el-form-item>
-        <el-form-item label="申请人">
+        </div>
+        <div class="search-item">
+          <label>申请人</label>
           <el-input v-model="queryForm.claimantName" placeholder="请输入申请人" clearable />
-        </el-form-item>
-        <el-form-item label="理赔状态">
+        </div>
+        <div class="search-item">
+          <label>理赔状态</label>
           <el-select v-model="queryForm.claimStatus" placeholder="请选择" clearable>
             <el-option label="已报案" value="REPORTED" />
             <el-option label="处理中" value="PROCESSING" />
@@ -25,14 +28,16 @@
             <el-option label="已付款" value="PAID" />
             <el-option label="已拒绝" value="REJECTED" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-button type="primary" @click="handleCreate">新建理赔</el-button>
+        </div>
+      </div>
+    </div>
     
+    <!-- 表格区域 -->
     <el-card>
       <el-table :data="tableData" border stripe>
         <el-table-column prop="claimNo" label="理赔单号" width="150" />

@@ -1,39 +1,43 @@
 <template>
   <div class="product-container">
+    <div class="page-header">
+      <h2>产品管理</h2>
+    </div>
+    
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="产品代码">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>产品代码</label>
           <el-input v-model="queryForm.productCode" placeholder="请输入产品代码" clearable />
-        </el-form-item>
-        <el-form-item label="产品名称">
+        </div>
+        <div class="search-item">
+          <label>产品名称</label>
           <el-input v-model="queryForm.productName" placeholder="请输入产品名称" clearable />
-        </el-form-item>
-        <el-form-item label="产品类型">
+        </div>
+        <div class="search-item">
+          <label>产品类型</label>
           <el-select v-model="queryForm.productType" placeholder="请选择" clearable>
             <el-option label="人寿保险" value="LIFE" />
             <el-option label="财产保险" value="PROPERTY" />
             <el-option label="意外保险" value="ACCIDENT" />
             <el-option label="健康保险" value="HEALTH" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
+        </div>
+        <div class="search-item">
+          <label>状态</label>
           <el-select v-model="queryForm.status" placeholder="请选择" clearable>
             <el-option label="草稿" value="DRAFT" />
             <el-option label="在售" value="ACTIVE" />
             <el-option label="停售" value="INACTIVE" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 操作按钮 -->
-    <div class="toolbar">
-      <el-button type="primary" @click="handleAdd">新增产品</el-button>
+          <el-button type="primary" @click="handleAdd">新增产品</el-button>
+        </div>
+      </div>
     </div>
 
     <!-- 表格区域 -->
@@ -90,7 +94,7 @@
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" top="5vh" destroy-on-close>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
         <el-form-item label="产品代码" prop="productCode">
           <el-input v-model="form.productCode" placeholder="请输入产品代码" />
@@ -141,7 +145,7 @@
     </el-dialog>
 
     <!-- 产品详情对话框（包含条款和险种） -->
-    <el-dialog v-model="detailDialogVisible" title="产品详情" width="900px">
+    <el-dialog v-model="detailDialogVisible" title="产品详情" width="900px" top="5vh" destroy-on-close>
       <el-tabs v-model="activeTab">
         <el-tab-pane label="基本信息" name="basic">
           <el-descriptions :column="2" border>
@@ -224,7 +228,7 @@
     </el-dialog>
 
     <!-- 条款新增/编辑对话框 -->
-    <el-dialog v-model="clauseDialogVisible" :title="clauseDialogTitle" width="600px">
+    <el-dialog v-model="clauseDialogVisible" :title="clauseDialogTitle" width="600px" top="5vh" destroy-on-close>
       <el-form :model="clauseForm" :rules="clauseRules" ref="clauseFormRef" label-width="100px">
         <el-form-item label="条款代码" prop="clauseCode">
           <el-input v-model="clauseForm.clauseCode" placeholder="请输入条款代码" />
@@ -249,7 +253,7 @@
     </el-dialog>
 
     <!-- 险种新增/编辑对话框 -->
-    <el-dialog v-model="coverageDialogVisible" :title="coverageDialogTitle" width="600px">
+    <el-dialog v-model="coverageDialogVisible" :title="coverageDialogTitle" width="600px" top="5vh" destroy-on-close>
       <el-form :model="coverageForm" :rules="coverageRules" ref="coverageFormRef" label-width="100px">
         <el-form-item label="险种代码" prop="coverageCode">
           <el-input v-model="coverageForm.coverageCode" placeholder="请输入险种代码" />
@@ -652,8 +656,44 @@ onMounted(() => {
   padding: 20px;
 }
 
-.search-card {
+.search-wrapper {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
   margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.search-item {
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.search-item label {
+  display: block;
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.search-item .el-input,
+.search-item .el-select {
+  width: 100%;
+}
+
+.search-actions {
+  display: flex;
+  gap: 10px;
+  white-space: nowrap;
 }
 
 .toolbar {

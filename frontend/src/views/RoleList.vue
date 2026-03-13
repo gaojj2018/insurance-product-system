@@ -1,29 +1,30 @@
 <template>
   <div class="role-container">
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="角色代码">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>角色代码</label>
           <el-input v-model="queryForm.roleCode" placeholder="请输入角色代码" clearable />
-        </el-form-item>
-        <el-form-item label="角色名称">
+        </div>
+        <div class="search-item">
+          <label>角色名称</label>
           <el-input v-model="queryForm.roleName" placeholder="请输入角色名称" clearable />
-        </el-form-item>
-        <el-form-item label="状态">
+        </div>
+        <div class="search-item">
+          <label>状态</label>
           <el-select v-model="queryForm.status" placeholder="请选择" clearable>
             <el-option label="启用" value="ACTIVE" />
             <el-option label="停用" value="INACTIVE" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button type="primary" @click="handleAdd">新增角色</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
 
     <el-card>
       <el-table :data="tableData" v-loading="loading" border stripe>

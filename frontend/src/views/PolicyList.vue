@@ -5,32 +5,37 @@
     </div>
     
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="保单号">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>保单号</label>
           <el-input v-model="queryForm.policyNo" placeholder="请输入保单号" clearable />
-        </el-form-item>
-        <el-form-item label="产品名称">
+        </div>
+        <div class="search-item">
+          <label>产品名称</label>
           <el-input v-model="queryForm.productName" placeholder="请输入产品名称" clearable />
-        </el-form-item>
-        <el-form-item label="被保人ID">
+        </div>
+        <div class="search-item">
+          <label>被保人ID</label>
           <el-input v-model="queryForm.insuredId" placeholder="请输入被保人ID" clearable />
-        </el-form-item>
-        <el-form-item label="保单状态">
+        </div>
+        <div class="search-item">
+          <label>保单状态</label>
           <el-select v-model="queryForm.status" placeholder="请选择" clearable>
             <el-option label="生效" value="EFFECTIVE" />
             <el-option label="失效" value="LAPSED" />
             <el-option label="终止" value="TERMINATED" />
             <el-option label="已退保" value="SURRENDERED" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
     
+    <!-- 表格区域 -->
     <el-card>
       <el-table :data="tableData" border stripe>
         <el-table-column prop="policyNo" label="保单号" width="150" />

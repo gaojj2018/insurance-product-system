@@ -2,19 +2,21 @@
   <div class="page-container">
     <div class="page-header">
       <h2>投保申请</h2>
-      <el-button type="primary" @click="handleCreate">新建投保</el-button>
     </div>
     
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="投保单号">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>投保单号</label>
           <el-input v-model="queryForm.applicationNo" placeholder="请输入投保单号" clearable />
-        </el-form-item>
-        <el-form-item label="产品名称">
+        </div>
+        <div class="search-item">
+          <label>产品名称</label>
           <el-input v-model="queryForm.productName" placeholder="请输入产品名称" clearable />
-        </el-form-item>
-        <el-form-item label="状态">
+        </div>
+        <div class="search-item">
+          <label>状态</label>
           <el-select v-model="queryForm.status" placeholder="请选择" clearable>
             <el-option label="草稿" value="DRAFT" />
             <el-option label="已提交" value="SUBMITTED" />
@@ -23,14 +25,16 @@
             <el-option label="已出单" value="POLICY_ISSUED" />
             <el-option label="核保拒绝" value="REJECTED" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-button type="primary" @click="handleCreate">新建投保</el-button>
+        </div>
+      </div>
+    </div>
     
+    <!-- 表格区域 -->
     <el-card>
       <el-table :data="tableData" border stripe>
         <el-table-column prop="applicationNo" label="投保单号" width="150" />

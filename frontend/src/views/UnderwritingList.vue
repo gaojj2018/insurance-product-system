@@ -5,18 +5,22 @@
     </div>
     
     <!-- 搜索区域 -->
-    <el-card class="search-card">
-      <el-form :model="queryForm" inline>
-        <el-form-item label="投保单号">
+    <div class="search-wrapper">
+      <div class="search-row">
+        <div class="search-item">
+          <label>投保单号</label>
           <el-input v-model="queryForm.applicationNo" placeholder="请输入投保单号" clearable />
-        </el-form-item>
-        <el-form-item label="产品名称">
+        </div>
+        <div class="search-item">
+          <label>产品名称</label>
           <el-input v-model="queryForm.productName" placeholder="请输入产品名称" clearable />
-        </el-form-item>
-        <el-form-item label="投保人">
+        </div>
+        <div class="search-item">
+          <label>投保人</label>
           <el-input v-model="queryForm.applicantName" placeholder="请输入投保人姓名" clearable />
-        </el-form-item>
-        <el-form-item label="核保状态">
+        </div>
+        <div class="search-item">
+          <label>核保状态</label>
           <el-select v-model="queryForm.result" placeholder="请选择" clearable>
             <el-option label="待核保" value="PENDING" />
             <el-option label="已通过" value="PASSED" />
@@ -24,13 +28,13 @@
             <el-option label="核保中" value="UNDERWRITING" />
             <el-option label="延期" value="DEFERRED" />
           </el-select>
-        </el-form-item>
-        <el-form-item>
+        </div>
+        <div class="search-actions">
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
     
     <el-card>
       <el-table :data="tableData" border stripe>
