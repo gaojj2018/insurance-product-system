@@ -11,12 +11,25 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 客户管理Controller - 提供客户相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/customer")
 public class CustomerController {
     
     @Autowired
     private CustomerService customerService;
+    
+    @PostMapping("/count")
+    public ResponseEntity<Map<String, Object>> count() {
+        long count = customerService.count();
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 200);
+        result.put("data", Map.of("count", count));
+        result.put("message", "查询成功");
+        return ResponseEntity.ok(result);
+    }
     
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody Customer customer) {

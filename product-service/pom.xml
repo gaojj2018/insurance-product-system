@@ -16,7 +16,7 @@
     <artifactId>product-service</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>insurance-product-service</name>
+    <name>product-service</name>
     <description>保险产品管理系统</description>
     
     <properties>
@@ -84,6 +84,12 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
         </dependency>
         
         <!-- Test -->

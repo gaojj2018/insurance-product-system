@@ -1,5 +1,14 @@
+<!--
+ * 客户管理页面
+ * 功能: 客户信息的增删改查、冻结/解冻操作
+ * API: GET /customer/page, POST /customer, PUT /customer/:id, DELETE /customer/:id, POST /customer/freeze/:id, POST /customer/unfreeze/:id
+ -->
 <template>
   <div class="customer-container">
+    <div class="page-header">
+      <h2>客户管理</h2>
+    </div>
+    
     <!-- 搜索区域 -->
     <div class="search-wrapper">
       <div class="search-row">
@@ -35,8 +44,8 @@
         <template #empty>
           <el-empty description="暂无客户数据" />
         </template>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="customerName" label="客户姓名" width="120" />
+        <el-table-column prop="id" label="ID" width="80" sortable />
+        <el-table-column prop="customerName" label="客户姓名" width="120" sortable />
         <el-table-column prop="customerType" label="客户类型" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.customerType === 'PERSONAL'">个人</el-tag>

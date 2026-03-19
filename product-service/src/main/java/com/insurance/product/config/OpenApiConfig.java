@@ -13,18 +13,17 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-/**
- * Swagger/OpenAPI 配置
- */
 @Configuration
 public class OpenApiConfig {
 
     @Value("${server.port:8080}")
     private String port;
 
+    @Value("${gateway.url:http://localhost:8888}")
+    private String gatewayUrl;
+
     @Bean
     public OpenAPI customOpenAPI() {
-        // JWT 认证配置
         SecurityScheme securityScheme = new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
@@ -33,6 +32,8 @@ public class OpenApiConfig {
                 .name("Authorization");
 
         SecurityRequirement securityRequirement = new SecurityRequirement().addList("bearerAuth");
+
+        String localUrl = "http://localhost:" + port;
 
         return new OpenAPI()
                 .info(new Info()
@@ -48,8 +49,8 @@ public class OpenApiConfig {
                 .addSecurityItem(securityRequirement)
                 .schemaRequirement("bearerAuth", securityScheme)
                 .servers(List.of(
-                        new Server().url("http://localhost:" + port).description("本地开发环境"),
-                        new Server().url("http://localhost:8888").description("网关入口")
+                        new Server().url(localUrl).description("本地开发环境"),
+                        new Server().url(gatewayUrl).description("网关入口")
                 ));
     }
 }

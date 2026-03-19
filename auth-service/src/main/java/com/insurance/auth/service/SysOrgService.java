@@ -57,9 +57,7 @@ public class SysOrgService {
     
     public SysOrg create(SysOrg org) {
         if (org.getOrgCode() == null || org.getOrgCode().isEmpty()) {
-            // Find max org code - query all non-deleted orgs and find max numerically
             LambdaQueryWrapper<SysOrg> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(SysOrg::getDeleted, 0);
             List<SysOrg> allOrgs = sysOrgMapper.selectList(wrapper);
             
             int maxNum = 0;
@@ -89,6 +87,10 @@ public class SysOrgService {
             }
         } else {
             org.setParentPath("/0");
+        }
+        
+        if (org.getStatus() == null) {
+            org.setStatus("ACTIVE");
         }
         
         sysOrgMapper.insert(org);

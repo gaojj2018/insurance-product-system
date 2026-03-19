@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 投保申请Controller - 提供投保申请相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/application")
 @RequiredArgsConstructor
@@ -132,6 +135,23 @@ public class ApplicationController {
         } else {
             response.put("code", 400);
             response.put("message", "删除失败，只有草稿状态的投保申请可以删除");
+        }
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 强制删除投保申请（忽略状态，用于测试数据清理）
+     */
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<Map<String, Object>> forceDelete(@PathVariable Long id) {
+        boolean success = applicationService.forceDeleteApplication(id);
+        Map<String, Object> response = new HashMap<>();
+        if (success) {
+            response.put("code", 200);
+            response.put("message", "强制删除成功");
+        } else {
+            response.put("code", 404);
+            response.put("message", "删除失败，投保申请不存在");
         }
         return ResponseEntity.ok(response);
     }

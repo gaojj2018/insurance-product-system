@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 数据报表Controller - 提供统计数据和报表相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/report")
 public class ReportController {

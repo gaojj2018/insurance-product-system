@@ -24,6 +24,8 @@
         <module>policy-service</module>
         <module>claims-service</module>
         <module>finance-service</module>
+        <module>message-service</module>
+        <module>report-service</module>
     </modules>
 
     <properties>

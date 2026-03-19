@@ -1,3 +1,8 @@
+<!--
+ * 投保申请页面
+ * 功能: 投保单的创建、提交、查询、状态管理
+ * API: GET /application/page, POST /application, PUT /application/:id, POST /application/:id/submit
+ -->
 <template>
   <div class="page-container">
     <div class="page-header">
@@ -40,8 +45,8 @@
         <template #empty>
           <el-empty description="暂无投保申请数据" />
         </template>
-        <el-table-column prop="applicationNo" label="投保单号" width="150" />
-        <el-table-column prop="productName" label="产品名称" width="150" />
+        <el-table-column prop="applicationNo" label="投保单号" width="150" sortable />
+        <el-table-column prop="productName" label="产品名称" width="150" sortable />
         <el-table-column label="投保人" width="100">
           <template #default="{ row }">
             {{ getCustomerName(row.applicantId) }}
@@ -70,11 +75,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdTime" label="申请时间" width="180" />
-        <el-table-column label="操作" fixed="right" width="200">
+        <el-table-column label="操作" fixed="right" width="250">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button v-if="row.status === 'DRAFT'" link type="success" size="small" @click="handleSubmit(row)">提交</el-button>
             <el-button v-if="row.status === 'DRAFT'" link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="danger" size="small" @click="handleForceDelete(row)">强制删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -137,6 +143,18 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="保障期间" prop="coveragePeriod">
+              <el-input v-model="createForm.coveragePeriod" placeholder="如: 终身/10年/20年" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="缴费期间" prop="paymentPeriod">
+              <el-input v-model="createForm.paymentPeriod" placeholder="如: 终身/10年/20年" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="保额" prop="coverage">
               <el-input-number v-model="createForm.coverage" :min="0" :step="10000" style="width: 100%" />
             </el-form-item>
@@ -165,7 +183,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api'
 
@@ -192,6 +210,8 @@ const createForm = ref({
   applicantId: null,
   insuredId: null,
   coverage: 100000,
+  coveragePeriod: '',
+  paymentPeriod: '',
   paymentMethod: '年缴',
   remark: ''
 })
@@ -294,6 +314,20 @@ onMounted(async () => {
   await loadData()
 })
 
+watch(() => createForm.value.productId, (newProductId) => {
+  if (newProductId) {
+    const selectedProduct = products.value.find(p => p.productId === newProductId)
+    if (selectedProduct) {
+      if (!createForm.value.coveragePeriod) {
+        createForm.value.coveragePeriod = selectedProduct.coveragePeriod || ''
+      }
+      if (!createForm.value.paymentPeriod) {
+        createForm.value.paymentPeriod = selectedProduct.paymentPeriod || ''
+      }
+    }
+  }
+})
+
 const handleCreate = async () => {
   if (customers.value.length === 0) {
     await loadCustomers()
@@ -303,6 +337,8 @@ const handleCreate = async () => {
     applicantId: null,
     insuredId: null,
     coverage: 100000,
+    coveragePeriod: '',
+    paymentPeriod: '',
     paymentMethod: '年缴',
     remark: ''
   }
@@ -392,6 +428,29 @@ const handleDelete = async (row) => {
     const res = await request.delete(`/application/${row.applicationId}`)
     if (res.data.code === 200) {
       ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+// 强制删除投保单（忽略状态）
+const handleForceDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定要强制删除该投保申请吗？此操作不可恢复！', '警告', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await request.delete(`/application/${row.applicationId}/force`)
+    if (res.data.code === 200) {
+      ElMessage.success('强制删除成功')
       loadData()
     } else {
       ElMessage.error(res.data.message || '删除失败')

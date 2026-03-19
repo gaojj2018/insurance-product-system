@@ -1,5 +1,14 @@
+<!--
+ * 权限管理页面
+ * 功能: 系统权限的树形结构管理，包括增删改查
+ * API: GET /permission/tree, POST /permission, PUT /permission/:id, DELETE /permission/:id
+ -->
 <template>
   <div class="permission-container">
+    <div class="page-header">
+      <h2>权限管理</h2>
+    </div>
+    
     <div class="search-wrapper">
       <div class="search-row">
         <div class="search-actions">
@@ -58,7 +67,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -71,6 +80,7 @@ import { getPermissionTree, createPermission, updatePermission, deletePermission
 
 const tableData = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增权限')
 const formRef = ref()

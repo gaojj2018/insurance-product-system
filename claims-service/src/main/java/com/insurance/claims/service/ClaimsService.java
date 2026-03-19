@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * 理赔Service - 提供理赔业务逻辑处理
+ */
 @Service
 @RequiredArgsConstructor
 public class ClaimsService {
@@ -27,6 +30,10 @@ public class ClaimsService {
     
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final Random RANDOM = new Random();
+    
+    public long count() {
+        return claimsRepository.selectCount(null);
+    }
     
     @Transactional
     public Claims createClaims(Long policyId, String policyNo, Long applicantId, String applicantName,
@@ -48,14 +55,31 @@ public class ClaimsService {
         return claims;
     }
     
-    public IPage<Claims> getPage(int pageNum, int pageSize, String status) {
+    public IPage<Claims> getPage(int pageNum, int pageSize, String claimNo, String policyNo, String claimantName, String status) {
         Page<Claims> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Claims> wrapper = new LambdaQueryWrapper<>();
+        
+        if (claimNo != null && !claimNo.isEmpty()) {
+            wrapper.like(Claims::getClaimsNo, claimNo);
+        }
+        if (policyNo != null && !policyNo.isEmpty()) {
+            wrapper.like(Claims::getPolicyNo, policyNo);
+        }
+        if (claimantName != null && !claimantName.isEmpty()) {
+            wrapper.like(Claims::getApplicantName, claimantName);
+        }
         if (status != null && !status.isEmpty()) {
             wrapper.eq(Claims::getStatus, status);
         }
+        
         wrapper.orderByDesc(Claims::getCreatedTime);
-        return claimsRepository.selectPage(page, wrapper);
+        
+        IPage<Claims> result = claimsRepository.selectPage(page, wrapper);
+        
+        long total = claimsRepository.selectCount(wrapper);
+        result.setTotal(total);
+        
+        return result;
     }
     
     public Claims getById(Long id) {
@@ -131,5 +155,52 @@ public class ClaimsService {
         wrapper.eq(Claims::getPolicyId, policyId);
         wrapper.notIn(Claims::getStatus, "REJECTED", "CLOSED");
         return claimsRepository.selectList(wrapper);
+    }
+    
+    @Transactional
+    public void processSettlement(Long id) {
+        Claims claims = claimsRepository.selectById(id);
+        if (claims != null && "APPROVED".equals(claims.getStatus())) {
+            claims.setStatus("SETTLED");
+            claims.setSettleTime(LocalDateTime.now());
+            claimsRepository.updateById(claims);
+        }
+    }
+    
+    public Map<String, Object> getStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        long totalClaims = claimsRepository.selectCount(null);
+        
+        LambdaQueryWrapper<Claims> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.in(Claims::getStatus, "REPORTED", "PROCESSING");
+        long pendingClaims = claimsRepository.selectCount(pendingWrapper);
+        
+        LambdaQueryWrapper<Claims> approvedWrapper = new LambdaQueryWrapper<>();
+        approvedWrapper.eq(Claims::getStatus, "APPROVED");
+        long approvedClaims = claimsRepository.selectCount(approvedWrapper);
+        
+        LambdaQueryWrapper<Claims> paidWrapper = new LambdaQueryWrapper<>();
+        paidWrapper.eq(Claims::getStatus, "PAID");
+        long paidClaims = claimsRepository.selectCount(paidWrapper);
+        
+        LambdaQueryWrapper<Claims> rejectedWrapper = new LambdaQueryWrapper<>();
+        rejectedWrapper.eq(Claims::getStatus, "REJECTED");
+        long rejectedClaims = claimsRepository.selectCount(rejectedWrapper);
+        
+        LambdaQueryWrapper<Claims> allWrapper = new LambdaQueryWrapper<>();
+        List<Claims> allClaims = claimsRepository.selectList(allWrapper);
+        BigDecimal totalClaimAmount = allClaims.stream()
+                .map(c -> c.getClaimAmount() != null ? c.getClaimAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        stats.put("totalClaims", totalClaims);
+        stats.put("pendingClaims", pendingClaims);
+        stats.put("approvedClaims", approvedClaims);
+        stats.put("paidClaims", paidClaims);
+        stats.put("rejectedClaims", rejectedClaims);
+        stats.put("totalClaimAmount", totalClaimAmount);
+        
+        return stats;
     }
 }

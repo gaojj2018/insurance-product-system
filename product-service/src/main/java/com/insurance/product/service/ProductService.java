@@ -123,7 +123,6 @@ public class ProductService extends ServiceImpl<ProductRepository, Product> {
                 }
             }
         } catch (Exception e) {
-            // 服务不可用时跳过检查
         }
         
         try {

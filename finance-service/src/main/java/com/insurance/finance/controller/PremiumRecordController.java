@@ -20,12 +20,18 @@ public class PremiumRecordController {
     private PremiumRecordService premiumRecordService;
     
     @PostMapping("/page")
-    public ResponseEntity<Map<String, Object>> findPage(
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String policyNo,
-            @RequestParam(required = false) String customerName,
-            @RequestParam(required = false) String paymentStatus) {
+    public ResponseEntity<Map<String, Object>> findPage(@RequestBody Map<String, Object> params) {
+        int pageNum = 1;
+        int pageSize = 10;
+        if (params.get("pageNum") != null) {
+            pageNum = Integer.parseInt(params.get("pageNum").toString());
+        }
+        if (params.get("pageSize") != null) {
+            pageSize = Integer.parseInt(params.get("pageSize").toString());
+        }
+        String policyNo = params.containsKey("policyNo") && params.get("policyNo") != null ? params.get("policyNo").toString() : null;
+        String customerName = params.containsKey("customerName") && params.get("customerName") != null ? params.get("customerName").toString() : null;
+        String paymentStatus = params.containsKey("paymentStatus") && params.get("paymentStatus") != null ? params.get("paymentStatus").toString() : null;
         Page<PremiumRecord> page = premiumRecordService.findPage(pageNum, pageSize, policyNo, customerName, paymentStatus);
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
@@ -95,6 +101,48 @@ public class PremiumRecordController {
         Map<String, Object> result = new HashMap<>();
         result.put("success", success);
         result.put("message", success ? "确认成功" : "确认失败");
+        return ResponseEntity.ok(result);
+    }
+    
+    @PutMapping("/policy/{policyNo}/refund")
+    public ResponseEntity<Map<String, Object>> refundByPolicyNo(@PathVariable String policyNo) {
+        int count = premiumRecordService.refundByPolicyNo(policyNo);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "退保处理成功，涉及 " + count + " 条保费记录");
+        result.put("count", count);
+        return ResponseEntity.ok(result);
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+        boolean success = premiumRecordService.deleteById(id);
+        Map<String, Object> result = new HashMap<>();
+        if (success) {
+            result.put("code", 200);
+            result.put("message", "删除成功");
+        } else {
+            result.put("code", 400);
+            result.put("message", "删除失败");
+        }
+        return ResponseEntity.ok(result);
+    }
+    
+    @DeleteMapping("/clear-all")
+    public ResponseEntity<Map<String, Object>> clearAll() {
+        premiumRecordService.clearAll();
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 200);
+        result.put("message", "数据已清空");
+        return ResponseEntity.ok(result);
+    }
+    
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getStatistics() {
+        Map<String, Object> stats = premiumRecordService.getStatistics();
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 200);
+        result.put("data", stats);
         return ResponseEntity.ok(result);
     }
 }

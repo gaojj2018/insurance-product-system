@@ -11,6 +11,10 @@ import FinanceList from '@/views/FinanceList.vue'
 import OrgList from '@/views/OrgList.vue'
 import RoleList from '@/views/RoleList.vue'
 import UserList from '@/views/UserList.vue'
+import ReportList from '@/views/ReportList.vue'
+import ProductCompare from '@/views/ProductCompare.vue'
+import TaskList from '@/views/TaskList.vue'
+import TaskConfig from '@/views/TaskConfig.vue'
 
 const routes = [
   {
@@ -83,6 +87,30 @@ const routes = [
         name: 'UserList',
         component: UserList,
         meta: { title: '用户管理', permission: 'system:user' }
+      },
+      {
+        path: 'report',
+        name: 'ReportList',
+        component: ReportList,
+        meta: { title: '数据统计', permission: 'report' }
+      },
+      {
+        path: 'product/compare',
+        name: 'ProductCompare',
+        component: ProductCompare,
+        meta: { title: '产品对比', permission: 'product' }
+      },
+      {
+        path: 'task',
+        name: 'TaskList',
+        component: TaskList,
+        meta: { title: '任务调度', permission: 'system:task' }
+      },
+      {
+        path: 'task/config',
+        name: 'TaskConfig',
+        component: TaskConfig,
+        meta: { title: '任务配置', permission: 'system:task' }
       }
     ]
   }

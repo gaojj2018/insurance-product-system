@@ -1,0 +1,268 @@
+{
+  "test_time": "2026-03-19 22:00:57",
+  "test_user": "admin",
+  "created_data": {
+    "product": {
+      "code": "E2E0319220103",
+      "name": "E2E完整测试产品0319",
+      "type": "人寿保险",
+      "coverage_period": "终身",
+      "payment_period": "20年",
+      "min_coverage": 100000,
+      "max_coverage": 10000000,
+      "description": "完整测试产品描述"
+    },
+    "clause": {
+      "code": "CLAUSE0319220110",
+      "name": "E2E测试基本条款-0319",
+      "type": "基本条款"
+    },
+    "coverage": {
+      "code": "COV0319220117",
+      "name": "E2E主险-0319",
+      "type": "主险",
+      "min_sum_insured": 100000,
+      "max_sum_insured": 10000000,
+      "base_premium_rate": 0.0035,
+      "calculation_type": "FIXED"
+    },
+    "customer": {
+      "id": "C0319220127",
+      "name": "E2E测试客户0127",
+      "type": "个人",
+      "id_type": "身份证",
+      "id_no": "110101199001011234",
+      "mobile": "13812345678",
+      "email": "e2e0127@test.com",
+      "address": "北京市朝阳区E2E测试地址"
+    },
+    "application": {
+      "no": "APP0319220137",
+      "coverage": 500000,
+      "payment_method": "年缴",
+      "remark": "E2E测试投保备注"
+    },
+    "claims": {
+      "no": "CLM0319220153",
+      "applicant": "E2E理赔申请人",
+      "accident_type": "意外医疗",
+      "claim_amount": 50000,
+      "accident_location": "北京市朝阳区E2E测试地点"
+    },
+    "premium": {
+      "policyNo": "POL20260319373187",
+      "customerName": "E2E测试客户3307",
+      "productName": "E2E完整测试产品0319",
+      "premium": "¥1,750",
+      "paymentBatch": "",
+      "paymentDate": "2026-03-19T21:33:36",
+      "paymentStatus": "已缴费"
+    }
+  },
+  "module_results": [
+    {
+      "module": "登录",
+      "status": "PASS",
+      "detail": "admin login success",
+      "time": "22:01:01",
+      "fields": [
+        "username",
+        "password"
+      ]
+    },
+    {
+      "module": "产品管理-新增产品",
+      "status": "PASS",
+      "detail": "产品代码: E2E0319220103",
+      "time": "22:01:06",
+      "fields": [
+        "productCode",
+        "productName",
+        "productType",
+        "coveragePeriod",
+        "paymentPeriod",
+        "minCoverage",
+        "maxCoverage",
+        "description"
+      ]
+    },
+    {
+      "module": "产品管理-查看详情",
+      "status": "PASS",
+      "detail": "产品ID: 78",
+      "time": "22:01:09",
+      "fields": [
+        "productId",
+        "productCode",
+        "productName",
+        "productType",
+        "coveragePeriod",
+        "paymentPeriod",
+        "minCoverage",
+        "maxCoverage",
+        "status"
+      ]
+    },
+    {
+      "module": "产品管理-新增条款",
+      "status": "PASS",
+      "detail": "条款代码: CLAUSE0319220110",
+      "time": "22:01:14",
+      "fields": [
+        "clauseCode",
+        "clauseName",
+        "clauseType",
+        "content"
+      ]
+    },
+    {
+      "module": "产品管理-新增险种",
+      "status": "PASS",
+      "detail": "险种代码: COV0319220117",
+      "time": "22:01:22",
+      "fields": [
+        "coverageCode",
+        "coverageName",
+        "coverageType",
+        "minSumInsured",
+        "maxSumInsured",
+        "basePremiumRate",
+        "calculationType"
+      ]
+    },
+    {
+      "module": "产品管理-发布产品",
+      "status": "PASS",
+      "detail": "产品已发布",
+      "time": "22:01:26",
+      "fields": [
+        "status"
+      ]
+    },
+    {
+      "module": "客户管理-新增",
+      "status": "PASS",
+      "detail": "客户ID: C0319220127",
+      "time": "22:01:32",
+      "fields": [
+        "customerName",
+        "customerType",
+        "idType",
+        "idNo",
+        "mobile",
+        "email",
+        "address"
+      ]
+    },
+    {
+      "module": "投保申请-新建",
+      "status": "PASS",
+      "detail": "投保单号: APP0319220137",
+      "time": "22:01:40",
+      "fields": [
+        "productId",
+        "applicantId",
+        "insuredId",
+        "coverage",
+        "paymentMethod",
+        "remark"
+      ]
+    },
+    {
+      "module": "投保管理-查询",
+      "status": "PASS",
+      "detail": "查询结果: 3条，所有字段验证通过",
+      "time": "22:01:42",
+      "fields": [
+        "applicationNo",
+        "productName",
+        "applicantName",
+        "insuredName",
+        "coverage",
+        "premium",
+        "status",
+        "createdTime"
+      ]
+    },
+    {
+      "module": "核保管理-查询",
+      "status": "PASS",
+      "detail": "查询结果: 3条，所有字段验证通过",
+      "time": "22:01:43",
+      "fields": [
+        "applicationNo",
+        "productName",
+        "applicantName",
+        "coverageAmount",
+        "premium",
+        "result",
+        "createTime"
+      ]
+    },
+    {
+      "module": "核保管理-通过",
+      "status": "PASS",
+      "detail": "核保已通过",
+      "time": "22:01:45",
+      "fields": [
+        "result"
+      ]
+    },
+    {
+      "module": "保单管理-查询",
+      "status": "PASS",
+      "detail": "查询结果: 3条，所有字段验证通过，保额: 500000，保费: 1750",
+      "time": "22:01:47",
+      "fields": [
+        "policyNo",
+        "productName",
+        "insuredId",
+        "coverage",
+        "premium",
+        "status",
+        "effectiveDate",
+        "expirationDate",
+        "coverage_verified",
+        "premium_verified"
+      ]
+    },
+    {
+      "module": "理赔管理-新建",
+      "status": "PASS",
+      "detail": "理赔单号: CLM0319220153",
+      "time": "22:01:53",
+      "fields": [
+        "claimantName",
+        "accidentLocation",
+        "accidentDesc",
+        "policyNo",
+        "accidentType",
+        "accidentDate",
+        "claimAmount"
+      ]
+    },
+    {
+      "module": "财务管理-缴费确认",
+      "status": "PASS",
+      "detail": "确认缴费成功，批次号: ，实缴日期: 2026-03-19T21:33:36，状态: 已缴费",
+      "time": "22:01:55",
+      "fields": [
+        "policyNo",
+        "customerName",
+        "productName",
+        "premium",
+        "paymentStatus",
+        "paymentDate",
+        "paymentStatus_verified"
+      ]
+    },
+    {
+      "module": "测试过程",
+      "status": "FAIL",
+      "detail": "Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"text=报表管理\")\n",
+      "time": "22:02:25",
+      "fields": []
+    }
+  ],
+  "field_coverage": {}
+}

@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 核保管理Controller - 提供核保相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/underwriting")
 @RequiredArgsConstructor
@@ -170,15 +173,7 @@ public class UnderwritingController {
     
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        var references = underwritingService.checkBusinessReferences(id);
-        
         Map<String, Object> result = new HashMap<>();
-        if (!references.isEmpty()) {
-            result.put("code", 400);
-            result.put("message", "该核保记录有关联的业务，无法删除");
-            result.put("data", references);
-            return ResponseEntity.ok(result);
-        }
         
         boolean success = underwritingService.removeById(id);
         result.put("code", success ? 200 : 500);

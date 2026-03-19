@@ -15,12 +15,25 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 理赔管理Controller - 提供理赔相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/claims")
 @RequiredArgsConstructor
 public class ClaimsController {
     
     private final ClaimsService claimsService;
+    
+    @PostMapping("/count")
+    public ResponseEntity<Map<String, Object>> count() {
+        long count = claimsService.count();
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 200);
+        result.put("data", Map.of("count", count));
+        result.put("message", "查询成功");
+        return ResponseEntity.ok(result);
+    }
     
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(
@@ -65,8 +78,11 @@ public class ClaimsController {
     public ResponseEntity<Map<String, Object>> getPage(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String claimNo,
+            @RequestParam(required = false) String policyNo,
+            @RequestParam(required = false) String claimantName,
             @RequestParam(required = false) String status) {
-        IPage<Claims> page = claimsService.getPage(pageNum, pageSize, status);
+        IPage<Claims> page = claimsService.getPage(pageNum, pageSize, claimNo, policyNo, claimantName, status);
         Map<String, Object> response = new HashMap<>();
         response.put("code", 200);
         response.put("data", page);
@@ -157,6 +173,15 @@ public class ClaimsController {
         response.put("code", 200);
         response.put("data", claims);
         response.put("message", "查询成功");
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getStatistics() {
+        Map<String, Object> stats = claimsService.getStatistics();
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", stats);
         return ResponseEntity.ok(response);
     }
 }

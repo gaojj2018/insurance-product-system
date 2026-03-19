@@ -1,3 +1,8 @@
+<!--
+ * 理赔管理页面
+ * 功能: 理赔案件的报案、审核、付款操作
+ * API: GET /claims/page, POST /claims, PUT /claims/:id
+ -->
 <template>
   <div class="page-container">
     <div class="page-header">
@@ -43,8 +48,8 @@
         <template #empty>
           <el-empty description="暂无理赔数据" />
         </template>
-        <el-table-column prop="claimNo" label="理赔单号" width="150" />
-        <el-table-column prop="policyNo" label="保单号" width="150" />
+        <el-table-column prop="claimNo" label="理赔单号" width="150" sortable />
+        <el-table-column prop="policyNo" label="保单号" width="150" sortable />
         <el-table-column prop="claimantName" label="申请人" width="100" />
         <el-table-column prop="accidentType" label="事故类型" width="100" />
         <el-table-column prop="claimAmount" label="申请金额" width="120">
@@ -352,7 +357,15 @@ const getStatusText = (status) => {
 const loadData = async () => {
   loading.value = true
   try {
-    const response = await request.post('/claims/page', queryForm.value)
+    const params = {
+      pageNum: queryForm.value.pageNum,
+      pageSize: queryForm.value.pageSize,
+      claimNo: queryForm.value.claimNo,
+      policyNo: queryForm.value.policyNo,
+      claimantName: queryForm.value.claimantName,
+      status: queryForm.value.claimStatus
+    }
+    const response = await request.post('/claims/page', null, { params })
     if (response.data.code === 200) {
       tableData.value = response.data.data.records || []
       total.value = response.data.data.total || 0

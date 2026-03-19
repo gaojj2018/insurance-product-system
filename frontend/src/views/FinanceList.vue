@@ -1,5 +1,14 @@
+<!--
+ * 财务管理页面
+ * 功能: 保费记录和理赔款的管理，包括缴费状态管理
+ * API: GET /finance/premium/page, GET /finance/claim/page
+ -->
 <template>
   <div class="finance-container">
+    <div class="page-header">
+      <h2>财务管理</h2>
+    </div>
+    
     <!-- Tab 切换 -->
     <el-tabs v-model="activeTab" type="border-card" @tab-change="handleTabChange">
       <el-tab-pane label="保费管理" name="premium">
@@ -35,6 +44,7 @@
           <el-button type="primary" @click="handleCollect">保费催收</el-button>
           <el-button type="success" @click="handleBatchConfirm">批量确认</el-button>
           <el-button type="info" @click="handleExport">导出</el-button>
+          <el-button type="danger" @click="handleClearAll">清空数据</el-button>
         </div>
 
         <!-- 表格区域 -->
@@ -49,9 +59,8 @@
                 ¥{{ row.premium ? row.premium.toLocaleString() : '0' }}
               </template>
             </el-table-column>
-            <el-table-column prop="paymentNo" label="缴费批号" width="150" />
-            <el-table-column prop="dueDate" label="应缴日期" width="120" />
-            <el-table-column prop="paidDate" label="实缴日期" width="120" />
+            <el-table-column prop="paymentBatchNo" label="缴费批次号" width="150" />
+            <el-table-column prop="paymentDate" label="实缴日期" width="120" />
             <el-table-column prop="paymentStatus" label="状态" width="100">
               <template #default="{ row }">
                 <el-tag v-if="row.paymentStatus === 'PENDING'" type="warning">待缴费</el-tag>
@@ -60,11 +69,12 @@
                 <el-tag v-else-if="row.paymentStatus === 'REFUNDED'" type="info">退费</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
+            <el-table-column label="操作" width="180" fixed="right">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" @click="handleView(row)">详情</el-button>
                 <el-button link type="success" size="small" v-if="row.paymentStatus === 'PENDING'" @click="handleConfirm(row)">确认</el-button>
                 <el-button link type="warning" size="small" v-if="row.paymentStatus === 'OVERDUE'" @click="handleRemind(row)">催收</el-button>
+                <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -112,10 +122,11 @@
                 <el-tag v-else-if="row.paymentStatus === 'FAILED'" type="danger">支付失败</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
+            <el-table-column label="操作" width="180" fixed="right">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" @click="handleView(row)">详情</el-button>
                 <el-button link type="success" size="small" v-if="row.paymentStatus === 'PENDING'" @click="handlePay(row)">支付</el-button>
+                <el-button link type="danger" size="small" @click="handleDeleteClaim(row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -165,6 +176,7 @@
         <el-card style="margin-top: 20px">
           <div class="toolbar">
             <el-button type="primary" @click="handleExportReport">导出报表</el-button>
+            <el-button type="danger" @click="handleClearReport">清空数据</el-button>
           </div>
           <el-table :data="reportData" border stripe>
             <el-table-column prop="date" label="日期" width="120" />
@@ -194,8 +206,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getPremiumList, getClaimPaymentList, confirmPremium, payClaim, getFinanceReport, getFinanceStats } from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '@/api/index'
+import { getPremiumList, getClaimPaymentList, confirmPremium, payClaim, getFinanceReport, getFinanceStats, deletePremium, clearAllFinance } from '@/api'
 
 const activeTab = ref('premium')
 
@@ -252,20 +265,6 @@ const loadData = async () => {
     }
   } catch (error) {
     console.error('加载失败', error)
-    // 模拟数据
-    if (activeTab.value === 'premium') {
-      tableData.value = [
-        { id: 1, policyNo: 'POL202603001', customerName: '张三', productName: '平安福终身寿险', premium: 12580, paymentNo: 'PAY2026030101', dueDate: '2026-03-15', paidDate: '2026-03-01', paymentStatus: 'PAID' },
-        { id: 2, policyNo: 'POL202603002', customerName: '李四', productName: '健康安康医疗保险', premium: 3680, paymentNo: 'PAY2026030102', dueDate: '2026-03-20', paidDate: '', paymentStatus: 'PENDING' },
-        { id: 3, policyNo: 'POL202603003', customerName: '王五', productName: '意外保障计划', premium: 1580, paymentNo: 'PAY2026030103', dueDate: '2026-03-10', paidDate: '', paymentStatus: 'OVERDUE' }
-      ]
-    } else if (activeTab.value === 'claim') {
-      tableData.value = [
-        { id: 1, claimNo: 'CLM202603001', policyNo: 'POL202501001', customerName: '赵六', claimAmount: 15000, paymentMethod: 'BANK_TRANSFER', accountNo: '6222***********1234', paymentStatus: 'PAID' },
-        { id: 2, claimNo: 'CLM202603002', policyNo: 'POL202502015', customerName: '孙七', claimAmount: 8500, paymentMethod: 'BANK_TRANSFER', accountNo: '6210***********5678', paymentStatus: 'PENDING' }
-      ]
-    }
-    total.value = tableData.value.length
   } finally {
     loading.value = false
   }
@@ -324,6 +323,50 @@ const handleRemind = (row) => {
   ElMessage.success('催收提醒已发送')
 }
 
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该保费记录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await deletePremium(row.id)
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+const handleDeleteClaim = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该理赔记录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await request.delete(`/finance/claim-payment/${row.id}`)
+    if (res.data.code === 200 || res.data.success) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
 const handleCollect = () => {
   ElMessage.info('保费催收功能开发中')
 }
@@ -338,6 +381,58 @@ const handleExport = () => {
 
 const handleExportReport = () => {
   ElMessage.info('导出报表功能开发中')
+}
+
+const handleClearAll = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要清空所有财务数据吗？此操作不可恢复！', 
+      '警告', 
+      {
+        confirmButtonText: '确定清空',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const res = await clearAllFinance()
+    if (res.data.code === 200) {
+      ElMessage.success('数据已清空')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '清空失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('清空失败')
+    }
+  }
+}
+
+const handleClearReport = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要清空财务报表数据吗？此操作不可恢复！', 
+      '警告', 
+      {
+        confirmButtonText: '确定清空',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const res = await clearAllFinance()
+    if (res.data.code === 200) {
+      ElMessage.success('报表数据已清空')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '清空失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('清空失败')
+    }
+  }
 }
 
 onMounted(() => {

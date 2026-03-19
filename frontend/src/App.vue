@@ -1,3 +1,7 @@
+<!--
+ * 应用根组件
+ * 功能: Vue应用的入口组件，负责路由视图的渲染
+ -->
 <template>
   <div id="app">
     <router-view />

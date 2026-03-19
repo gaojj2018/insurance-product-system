@@ -1,3 +1,8 @@
+<!--
+ * 保单管理页面
+ * 功能: 保单的查询、详情查看、状态管理
+ * API: GET /policy/page, GET /policy/:id
+ -->
 <template>
   <div class="page-container">
     <div class="page-header">
@@ -41,8 +46,8 @@
         <template #empty>
           <el-empty description="暂无保单数据" />
         </template>
-        <el-table-column prop="policyNo" label="保单号" width="150" />
-        <el-table-column prop="productName" label="产品名称" width="150" />
+        <el-table-column prop="policyNo" label="保单号" width="150" sortable />
+        <el-table-column prop="productName" label="产品名称" width="150" sortable />
         <el-table-column prop="insuredId" label="被保人ID" width="100" />
         <el-table-column prop="coverage" label="保额" width="120">
           <template #default="{ row }">
@@ -63,11 +68,12 @@
         </el-table-column>
         <el-table-column prop="effectiveDate" label="生效日期" width="120" />
         <el-table-column prop="expirationDate" label="到期日期" width="120" />
-        <el-table-column label="操作" fixed="right" width="200">
+        <el-table-column label="操作" fixed="right" width="250">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button link type="warning" size="small" @click="handleChange(row)">变更</el-button>
             <el-button link type="danger" size="small" @click="handleSurrender(row)" v-if="row.status === 'EFFECTIVE'">退保</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -146,8 +152,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/index'
+import { deletePolicy } from '@/api'
 
 const tableData = ref([])
 const loading = ref(false)
@@ -202,7 +209,11 @@ const getStatusText = (status) => {
 
 const loadData = async () => {
   try {
-    const response = await request.post('/policy/page', queryForm.value)
+    const params = {
+      pageNum: queryForm.value.pageNum,
+      pageSize: queryForm.value.pageSize
+    }
+    const response = await request.post('/policy/page', params)
     if (response.data.code === 200) {
       tableData.value = response.data.data.records || []
       total.value = response.data.data.total || 0
@@ -280,6 +291,28 @@ const handleSurrender = (row) => {
     }
     surrenderVisible.value = true
   }).catch(() => {})
+}
+
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该保单吗？此操作不可恢复！', '警告', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await deletePolicy(row.policyId)
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const confirmSurrender = async () => {

@@ -16,6 +16,7 @@ public class PremiumRecord {
     private String productCode;
     private String productName;
     private String insuredName;
+    private String customerName;
     
     private BigDecimal premium;
     private String paymentStatus;

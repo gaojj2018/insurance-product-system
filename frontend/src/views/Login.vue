@@ -1,3 +1,8 @@
+<!--
+ * 登录页面
+ * 功能: 用户身份验证，提供用户名密码登录功能
+ * API: POST /auth/login
+ -->
 <template>
   <div class="login-container">
     <el-card class="login-card">
@@ -48,32 +53,41 @@ import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import request from '@/api'
 
+// 路由实例，用于登录成功后跳转
 const router = useRouter()
+// 表单引用，用于表单验证
 const loginFormRef = ref(null)
+// 加载状态，控制登录按钮的loading效果
 const loading = ref(false)
 
+// 登录表单数据
 const loginForm = reactive({
   username: '',
   password: ''
 })
 
+// 表单验证规则
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+// 处理登录操作
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   
+  // 验证表单是否有效
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
+        // 调用登录API
         const response = await request.post('/auth/login', {
           username: loginForm.username,
           password: loginForm.password
         })
         
+        // 登录成功，保存用户信息到localStorage
         if (response.data.success) {
           localStorage.setItem('token', response.data.token)
           localStorage.setItem('username', response.data.username)

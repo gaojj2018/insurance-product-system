@@ -1,46 +1,108 @@
 package com.insurance.finance.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.insurance.finance.entity.ClaimPayment;
+import com.insurance.finance.entity.PremiumRecord;
+import com.insurance.finance.service.ClaimPaymentService;
+import com.insurance.finance.service.PremiumRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
+/**
+ * 财务统计Controller - 提供财务数据统计和分析的RESTful API
+ */
 @RestController
 @RequestMapping("/api/statistics")
 public class FinanceStatsController {
+
+    @Autowired
+    private PremiumRecordService premiumRecordService;
+
+    @Autowired
+    private ClaimPaymentService claimPaymentService;
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary() {
         Map<String, Object> data = new HashMap<>();
         
-        // 统计指标
-        data.put("todayPremium", 3100.00);
-        data.put("monthPremium", 6200.00);
-        data.put("monthClaim", 0.00);
-        data.put("monthBalance", 5580.00);
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime todayEnd = today.plusDays(1).atStartOfDay();
+        LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+        LocalDateTime monthStart = firstDayOfMonth.atStartOfDay();
         
-        // 列表数据
+        QueryWrapper<PremiumRecord> premiumWrapper = new QueryWrapper<>();
+        premiumWrapper.ge("payment_date", todayStart);
+        premiumWrapper.le("payment_date", todayEnd);
+        premiumWrapper.eq("payment_status", "PAID");
+        List<PremiumRecord> todayPremiums = premiumRecordService.list(premiumWrapper);
+        BigDecimal todayPremium = todayPremiums.stream()
+                .map(PremiumRecord::getPremium)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        premiumWrapper = new QueryWrapper<>();
+        premiumWrapper.ge("payment_date", monthStart);
+        premiumWrapper.eq("payment_status", "PAID");
+        List<PremiumRecord> monthPremiums = premiumRecordService.list(premiumWrapper);
+        BigDecimal monthPremium = monthPremiums.stream()
+                .map(PremiumRecord::getPremium)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        QueryWrapper<ClaimPayment> claimWrapper = new QueryWrapper<>();
+        claimWrapper.ge("create_time", monthStart);
+        List<ClaimPayment> monthClaims = claimPaymentService.list(claimWrapper);
+        BigDecimal monthClaim = monthClaims.stream()
+                .map(ClaimPayment::getClaimAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal monthBalance = monthPremium.subtract(monthClaim);
+        
+        data.put("todayPremium", todayPremium);
+        data.put("monthPremium", monthPremium);
+        data.put("monthClaim", monthClaim);
+        data.put("monthBalance", monthBalance);
+        
         List<Map<String, Object>> dailyStats = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         
-        // 模拟每日数据
-        String[] days = {"2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", 
-                         "2026-03-06", "2026-03-07", "2026-03-08"};
-        Double[] premiums = {1000.0, 800.0, 1200.0, 600.0, 900.0, 1100.0, 300.0, 200.0};
-        Double[] claims = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        
-        for (int i = 0; i < days.length; i++) {
-            Map<String, Object> day = new HashMap<>();
-            day.put("date", days[i]);
-            day.put("premium", premiums[i]);
-            day.put("claim", claims[i]);
-            day.put("balance", premiums[i] - claims[i]);
-            day.put("policyCount", i + 1);
-            day.put("claimCount", 0);
-            dailyStats.add(day);
+        for (int i = 7; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            LocalDateTime dayStart = day.atStartOfDay();
+            LocalDateTime dayEnd = day.plusDays(1).atStartOfDay();
+            
+            QueryWrapper<PremiumRecord> dayPremiumWrapper = new QueryWrapper<>();
+            dayPremiumWrapper.ge("payment_date", dayStart);
+            dayPremiumWrapper.lt("payment_date", dayEnd);
+            dayPremiumWrapper.eq("payment_status", "PAID");
+            List<PremiumRecord> dayPremiums = premiumRecordService.list(dayPremiumWrapper);
+            BigDecimal dayPremiumTotal = dayPremiums.stream()
+                    .map(PremiumRecord::getPremium)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            QueryWrapper<ClaimPayment> dayClaimWrapper = new QueryWrapper<>();
+            dayClaimWrapper.ge("create_time", dayStart);
+            dayClaimWrapper.lt("create_time", dayEnd);
+            List<ClaimPayment> dayClaims = claimPaymentService.list(dayClaimWrapper);
+            BigDecimal dayClaimTotal = dayClaims.stream()
+                    .map(ClaimPayment::getClaimAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            Map<String, Object> dayData = new HashMap<>();
+            dayData.put("date", day.format(formatter));
+            dayData.put("premium", dayPremiumTotal);
+            dayData.put("claim", dayClaimTotal);
+            dayData.put("balance", dayPremiumTotal.subtract(dayClaimTotal));
+            dayData.put("policyCount", dayPremiums.size());
+            dayData.put("claimCount", dayClaims.size());
+            dailyStats.add(dayData);
         }
         
         data.put("dailyStats", dailyStats);
@@ -58,13 +120,44 @@ public class FinanceStatsController {
             @RequestParam(required = false, defaultValue = "30") int days) {
         Map<String, Object> result = new HashMap<>();
         
+        LocalDate today = LocalDate.now();
+        Map<String, BigDecimal> premiumByMonth = new LinkedHashMap<>();
+        Map<String, BigDecimal> claimsByMonth = new LinkedHashMap<>();
+        
+        for (int i = 2; i >= 0; i--) {
+            LocalDate monthDate = today.minusMonths(i);
+            String monthLabel = monthDate.getMonthValue() + "月";
+            LocalDate monthStart = monthDate.withDayOfMonth(1);
+            LocalDate monthEnd = monthDate.plusMonths(1).withDayOfMonth(1);
+            
+            QueryWrapper<PremiumRecord> premiumWrapper = new QueryWrapper<>();
+            premiumWrapper.ge("payment_date", monthStart.atStartOfDay());
+            premiumWrapper.lt("payment_date", monthEnd.atStartOfDay());
+            premiumWrapper.eq("payment_status", "PAID");
+            List<PremiumRecord> monthPremiums = premiumRecordService.list(premiumWrapper);
+            BigDecimal monthPremium = monthPremiums.stream()
+                    .map(PremiumRecord::getPremium)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            QueryWrapper<ClaimPayment> claimWrapper = new QueryWrapper<>();
+            claimWrapper.ge("create_time", monthStart.atStartOfDay());
+            claimWrapper.lt("create_time", monthEnd.atStartOfDay());
+            List<ClaimPayment> monthClaims = claimPaymentService.list(claimWrapper);
+            BigDecimal monthClaim = monthClaims.stream()
+                    .map(ClaimPayment::getClaimAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            premiumByMonth.put(monthLabel, monthPremium);
+            claimsByMonth.put(monthLabel, monthClaim);
+        }
+        
         Map<String, Object> premiumTrend = new HashMap<>();
-        premiumTrend.put("labels", new String[]{"1月", "2月", "3月"});
-        premiumTrend.put("values", new Double[]{1000.0, 2500.0, 2700.0});
+        premiumTrend.put("labels", premiumByMonth.keySet().toArray(new String[0]));
+        premiumTrend.put("values", premiumByMonth.values().toArray(new BigDecimal[0]));
         
         Map<String, Object> claimsTrend = new HashMap<>();
-        claimsTrend.put("labels", new String[]{"1月", "2月", "3月"});
-        claimsTrend.put("values", new Double[]{0.0, 0.0, 0.0});
+        claimsTrend.put("labels", claimsByMonth.keySet().toArray(new String[0]));
+        claimsTrend.put("values", claimsByMonth.values().toArray(new BigDecimal[0]));
         
         result.put("premiumTrend", premiumTrend);
         result.put("claimsTrend", claimsTrend);

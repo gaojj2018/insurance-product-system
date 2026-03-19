@@ -1,3 +1,8 @@
+<!--
+ * 系统布局页面
+ * 功能: 提供系统整体布局结构，包含侧边栏导航和顶部Header
+ * 包含菜单: 产品管理、投保申请、核保管理、保单管理、理赔管理、客户管理、财务管理、机构管理、角色管理、数据统计、任务监控、任务配置、产品对比
+ -->
 <template>
   <el-container class="layout-container">
     <el-aside :width="isCollapse ? '64px' : '180px'" class="sidebar">
@@ -53,6 +58,22 @@
           <el-icon><UserFilled /></el-icon>
           <span>角色管理</span>
         </el-menu-item>
+        <el-menu-item index="/report">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>数据统计</span>
+        </el-menu-item>
+        <el-menu-item index="/task">
+          <el-icon><Monitor /></el-icon>
+          <span>任务监控</span>
+        </el-menu-item>
+        <el-menu-item index="/task/config">
+          <el-icon><Setting /></el-icon>
+          <span>任务配置</span>
+        </el-menu-item>
+        <el-menu-item index="/product/compare">
+          <el-icon><Switch /></el-icon>
+          <span>产品对比</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -75,25 +96,34 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { 
-  Shop, Document, Check, Tickets, Money, User, Wallet, OfficeBuilding, UserFilled, DArrowLeft, DArrowRight
+  Shop, Document, Check, Tickets, Money, User, Wallet, OfficeBuilding, UserFilled, DArrowLeft, DArrowRight,
+  DataAnalysis, Clock, Switch, Monitor, Setting
 } from '@element-plus/icons-vue'
 
+// 路由实例
 const router = useRouter()
+// 当前路由实例，用于获取当前激活的菜单项
 const route = useRoute()
+// 当前用户名，从localStorage获取
 const username = ref(localStorage.getItem('username') || 'Admin')
+// 侧边栏折叠状态
 const isCollapse = ref(false)
 
+// 计算当前激活的菜单项，基于当前路由路径
 const activeMenu = computed(() => route.path)
 
+// 处理退出登录操作
 const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
+    // 清除本地存储的用户信息
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     localStorage.removeItem('role')
+    // 跳转到登录页
     router.push('/login')
   })
 }
@@ -108,9 +138,10 @@ const handleLogout = () => {
   background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
+  overflow: auto;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header {
@@ -144,19 +175,7 @@ const handleLogout = () => {
   justify-content: center;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 18px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo h3 {
@@ -165,10 +184,14 @@ const handleLogout = () => {
   font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-menu {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   border-right: none !important;
   background: transparent !important;
 }
@@ -208,6 +231,44 @@ const handleLogout = () => {
   height: 24px;
   background: #fff;
   border-radius: 0 4px 4px 0;
+}
+
+/* Sub-menu styling */
+.sidebar-menu .el-sub-menu__title {
+  padding-left: 16px !important;
+}
+
+.sidebar-menu .el-sub-menu__title:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+.sidebar-menu .el-sub-menu .el-menu-item {
+  padding-left: 40px !important;
+  height: 44px;
+  line-height: 44px;
+  margin: 2px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.sidebar-menu .el-sub-menu .el-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-menu .el-sub-menu .el-menu-item.is-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: #fff !important;
+}
+
+.sidebar-menu .el-sub-menu__icon-arrow {
+  color: rgba(255, 255, 255, 0.6);
+  right: 12px;
+}
+
+/* Expanded sub-menu background */
+.sidebar-menu .el-sub-menu.is-opened .el-sub-menu__title {
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .el-menu--collapse .el-menu-item,

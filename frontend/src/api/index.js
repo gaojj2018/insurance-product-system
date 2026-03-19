@@ -151,6 +151,14 @@ export const confirmPremium = (id) => {
   return request.post(`/finance/premium/confirm/${id}`)
 }
 
+export const deletePremium = (id) => {
+  return request.delete(`/finance/premium/${id}`)
+}
+
+export const clearAllFinance = () => {
+  return request.delete('/finance/premium/clear-all')
+}
+
 export const refundPremium = (id) => {
   return request.post(`/finance/premium/refund/${id}`)
 }
@@ -311,8 +319,12 @@ export const deleteClaims = (id) => {
   return request.delete(`/claims/${id}`)
 }
 
-export const getPolicyList = (params) => {
-  return request.post('/policy/page', null, { params })
+export const getPolicyList = (data) => {
+  return request.post('/policy/page', data)
+}
+
+export const deletePolicy = (id) => {
+  return request.delete(`/policy/${id}`)
 }
 
 export default request

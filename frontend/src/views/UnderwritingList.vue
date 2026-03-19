@@ -1,3 +1,8 @@
+<!--
+ * 核保管理页面
+ * 功能: 投保单的核保审核操作，包括通过、拒绝、延期等
+ * API: GET /underwriting/page, POST /underwriting/:id/approve, POST /underwriting/:id/reject
+ -->
 <template>
   <div class="page-container">
     <div class="page-header">
@@ -41,8 +46,8 @@
         <template #empty>
           <el-empty description="暂无核保数据" />
         </template>
-        <el-table-column prop="applicationNo" label="投保单号" width="150" />
-        <el-table-column prop="productName" label="产品名称" width="150" />
+        <el-table-column prop="applicationNo" label="投保单号" width="150" sortable />
+        <el-table-column prop="productName" label="产品名称" width="150" sortable />
         <el-table-column prop="applicantName" label="投保人" width="100" />
         <el-table-column prop="coverageAmount" label="保额" width="120">
           <template #default="{ row }">
@@ -61,12 +66,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="申请时间" width="180" />
-        <el-table-column label="操作" fixed="right" width="250">
+        <el-table-column prop="createdTime" label="申请时间" width="180" />
+        <el-table-column label="操作" fixed="right" width="300">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">查看详情</el-button>
             <el-button link type="success" size="small" @click="handleApprove(row)" v-if="(row.result || row.underwriteStatus) === 'PENDING'">通过</el-button>
             <el-button link type="danger" size="small" @click="openRejectDialog(row)" v-if="(row.result || row.underwriteStatus) === 'PENDING'">拒保</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -125,7 +131,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/index'
 
 const tableData = ref([])
@@ -266,6 +272,28 @@ const handleSizeChange = (val) => {
 const handleCurrentChange = (val) => {
   queryForm.value.pageNum = val
   loadData()
+}
+
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该核保记录吗？此操作不可恢复！', '警告', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await request.delete(`/underwriting/${row.underwritingId || row.id}`)
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message || '删除失败')
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 onMounted(() => {

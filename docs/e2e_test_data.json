@@ -1,0 +1,122 @@
+{
+  "test_time": "2026-03-19 12:58:27",
+  "test_user": "admin",
+  "created_data": {
+    "product": {
+      "code": "E2E0319125832",
+      "name": "E2E完整测试产品0319",
+      "type": "人寿保险",
+      "coverage_period": "10年",
+      "payment_period": "5年交清",
+      "min_coverage": 100000,
+      "max_coverage": 10000000,
+      "description": "完整测试产品描述"
+    },
+    "clause": {
+      "code": "CLAUSE0319125840",
+      "name": "E2E测试基本条款-0319",
+      "type": "基本条款"
+    },
+    "coverage": {
+      "code": "COV0319125846",
+      "name": "E2E主险-0319",
+      "type": "主险",
+      "min_sum_insured": 100000,
+      "max_sum_insured": 10000000,
+      "base_premium_rate": 0.0035
+    },
+    "customer": {
+      "id": "C0319125856",
+      "name": "E2E测试客户5856",
+      "type": "个人",
+      "id_type": "身份证",
+      "mobile": "13812345678"
+    },
+    "application": {
+      "no": "APP0319125905",
+      "coverage": 500000,
+      "payment_method": "年缴",
+      "remark": "E2E测试投保备注"
+    },
+    "claims": {
+      "no": "CLM0319125910",
+      "applicant": "E2E理赔申请人",
+      "accident_type": "意外医疗",
+      "claim_amount": 50000
+    }
+  },
+  "module_results": [
+    {
+      "module": "登录",
+      "status": "PASS",
+      "detail": "admin login success",
+      "time": "12:58:31"
+    },
+    {
+      "module": "产品管理-新增产品",
+      "status": "PASS",
+      "detail": "产品代码: E2E0319125832",
+      "time": "12:58:35"
+    },
+    {
+      "module": "产品管理-查看详情",
+      "status": "PASS",
+      "detail": "产品ID: 34",
+      "time": "12:58:38"
+    },
+    {
+      "module": "产品管理-新增条款",
+      "status": "PASS",
+      "detail": "条款代码: CLAUSE0319125840",
+      "time": "12:58:43"
+    },
+    {
+      "module": "产品管理-新增险种",
+      "status": "PASS",
+      "detail": "险种代码: COV0319125846",
+      "time": "12:58:50"
+    },
+    {
+      "module": "产品管理-发布产品",
+      "status": "PASS",
+      "detail": "产品已发布",
+      "time": "12:58:55"
+    },
+    {
+      "module": "客户管理",
+      "status": "PASS",
+      "detail": "客户ID: C0319125856",
+      "time": "12:59:00"
+    },
+    {
+      "module": "投保申请",
+      "status": "PASS",
+      "detail": "投保单号: APP0319125905",
+      "time": "12:59:05"
+    },
+    {
+      "module": "核保管理",
+      "status": "PASS",
+      "detail": "查询结果: 0条",
+      "time": "12:59:06"
+    },
+    {
+      "module": "保单管理",
+      "status": "PASS",
+      "detail": "查询结果: 0条",
+      "time": "12:59:08"
+    },
+    {
+      "module": "理赔管理",
+      "status": "PASS",
+      "detail": "理赔单号: CLM0319125910",
+      "time": "12:59:10"
+    },
+    {
+      "module": "财务管理",
+      "status": "PASS",
+      "detail": "查询结果: 0条",
+      "time": "12:59:12"
+    }
+  ]
+}

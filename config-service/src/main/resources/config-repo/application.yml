@@ -61,7 +61,7 @@ mybatis-plus:
 
 # JWT配置
 jwt:
-  secret: insurance-product-service-secret-key-2026
+  secret: product-service-secret-key-2026
   expiration: 86400000
 
 logging:

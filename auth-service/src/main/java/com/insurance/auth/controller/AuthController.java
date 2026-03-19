@@ -12,6 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 认证授权Controller - 提供登录认证和权限相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

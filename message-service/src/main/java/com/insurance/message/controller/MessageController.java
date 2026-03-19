@@ -52,4 +52,29 @@ public class MessageController {
         result.put("data", records);
         return ResponseEntity.ok(result);
     }
+    
+    @PostMapping("/send/renewal")
+    public ResponseEntity<Map<String, Object>> sendRenewalNotification(
+            @RequestParam String mobile,
+            @RequestParam String policyNo,
+            @RequestParam String expiryDate) {
+        messageService.notifyPolicyRenewal(mobile, policyNo, expiryDate);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "续期提醒已发送");
+        return ResponseEntity.ok(result);
+    }
+    
+    @PostMapping("/send/premium-due")
+    public ResponseEntity<Map<String, Object>> sendPremiumDueNotification(
+            @RequestParam String mobile,
+            @RequestParam String policyNo,
+            @RequestParam String amount,
+            @RequestParam String dueDate) {
+        messageService.notifyPremiumDue(mobile, policyNo, amount, dueDate);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "保费到期提醒已发送");
+        return ResponseEntity.ok(result);
+    }
 }

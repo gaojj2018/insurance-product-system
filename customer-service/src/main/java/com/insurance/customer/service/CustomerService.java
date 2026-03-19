@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 客户Service - 提供客户业务逻辑处理
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomerService extends ServiceImpl<CustomerMapper, Customer> {

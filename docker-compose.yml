@@ -1,0 +1,130 @@
+version: '3'
+services:
+  eureka:
+    image: insurance-eureka:latest
+    ports:
+      - "8761:8761"
+
+  gateway:
+    image: insurance-gateway:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka
+
+  auth-service:
+    image: insurance-auth:latest
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka
+
+  product-service:
+    image: insurance-product:latest
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka
+
+  application-service:
+    image: insurance-application:latest
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka
+
+  underwriting-service:
+    image: insurance-underwriting:latest
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka
+
+  policy-service:
+    image: insurance-policy:latest
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka
+
+  claims-service:
+    image: insurance-claims:latest
+    ports:
+      - "8086:8086"
+    depends_on:
+      - eureka
+
+  customer-service:
+    image: insurance-customer:latest
+    ports:
+      - "8087:8087"
+    depends_on:
+      - eureka
+
+  finance-service:
+    image: insurance-finance:latest
+    ports:
+      - "8088:8088"
+    depends_on:
+      - eureka
+
+  message-service:
+    image: insurance-message:latest
+    ports:
+      - "8089:8089"
+    depends_on:
+      - eureka
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - gateway
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - elasticsearch
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411"
+
+volumes:
+  elasticsearch-data:
+  grafana-data:

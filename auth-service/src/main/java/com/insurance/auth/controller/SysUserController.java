@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 系统用户Controller - 提供用户管理相关的RESTful API
+ */
 @RestController
 @RequestMapping("/api/user")
 public class SysUserController {

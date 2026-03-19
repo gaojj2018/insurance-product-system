@@ -1,3 +1,10 @@
+<!--
+ * 产品管理页面
+ * 功能: 保险产品的增删改查、发布、停售操作，以及产品条款和险种配置
+ * API: GET /product/page, POST /product, PUT /product/:id, DELETE /product/:id, POST /product/publish/:id, POST /product/stop/:id
+ * 条款API: GET /clause/product/:id, POST /clause, PUT /clause/:id, DELETE /clause/:id
+ * 险种API: GET /coverage/product/:id, POST /coverage, PUT /coverage/:id, DELETE /coverage/:id
+ -->
 <template>
   <div class="product-container">
     <div class="page-header">
@@ -46,9 +53,9 @@
         <template #empty>
           <el-empty description="暂无产品数据" />
         </template>
-        <el-table-column prop="productId" label="ID" width="80" />
-        <el-table-column prop="productCode" label="产品代码" width="120" />
-        <el-table-column prop="productName" label="产品名称" min-width="150" />
+        <el-table-column prop="productId" label="ID" width="80" sortable />
+        <el-table-column prop="productCode" label="产品代码" width="120" sortable />
+        <el-table-column prop="productName" label="产品名称" min-width="150" sortable />
         <el-table-column prop="productType" label="产品类型" width="120">
           <template #default="{ row }">
             <el-tag v-if="row.productType === 'LIFE'">人寿保险</el-tag>
@@ -143,7 +150,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
 
@@ -186,7 +193,7 @@
                 <el-tag v-else-if="row.clauseType === 'EXTRA'" type="warning">附加条款</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="content" label="条款内容" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="clauseContent" label="条款内容" min-width="200" show-overflow-tooltip />
             <el-table-column label="操作" width="150" fixed="right">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" @click="handleEditClause(row)">编辑</el-button>
@@ -209,14 +216,25 @@
                 <el-tag v-else-if="row.coverageType === 'RIDER'" type="warning">附加险</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="coverageAmount" label="保额/金额" width="120">
+            <el-table-column prop="minSumInsured" label="最低保额" width="120">
               <template #default="{ row }">
-                {{ row.coverageAmount?.toLocaleString() }}
+                {{ row.minSumInsured?.toLocaleString() }}
               </template>
             </el-table-column>
-            <el-table-column prop="premium" label="保费" width="100">
+            <el-table-column prop="maxSumInsured" label="最高保额" width="120">
               <template #default="{ row }">
-                {{ row.premium?.toLocaleString() }}
+                {{ row.maxSumInsured?.toLocaleString() }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="basePremiumRate" label="保费费率" width="100">
+              <template #default="{ row }">
+                {{ row.basePremiumRate }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="calculationType" label="计算方式" width="100">
+              <template #default="{ row }">
+                <el-tag v-if="row.calculationType === 'FIXED'" type="success">固定</el-tag>
+                <el-tag v-else-if="row.calculationType === 'PERCENTAGE'" type="primary">比例</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="150" fixed="right">
@@ -324,6 +342,7 @@ const queryForm = ref({
 // 表格数据
 const tableData = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 const total = ref(0)
 
 // 对话框

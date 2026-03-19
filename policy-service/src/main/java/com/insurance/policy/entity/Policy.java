@@ -26,6 +26,8 @@ public class Policy {
     
     private Long applicantId;
     
+    private String applicantName;
+    
     private Long insuredId;
     
     private BigDecimal coverage;

@@ -21,7 +21,7 @@ spring:
       routes:
         # 产品服务
         - id: product-service
-          uri: lb://insurance-product-service
+          uri: lb://product-service
           predicates:
             - Path=/api/product/**
 
@@ -57,13 +57,13 @@ spring:
         
         # 条款服务
         - id: clause-service
-          uri: lb://insurance-product-service
+          uri: lb://product-service
           predicates:
             - Path=/api/clause/**
         
         # 保障范围服务
         - id: coverage-service
-          uri: lb://insurance-product-service
+          uri: lb://product-service
           predicates:
             - Path=/api/coverage/**
 

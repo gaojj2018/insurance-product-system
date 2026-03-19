@@ -1,5 +1,14 @@
+<!--
+ * 角色管理页面
+ * 功能: 系统角色的增删改查、权限配置
+ * API: GET /role/page, POST /role, PUT /role/:id, DELETE /role/:id
+ -->
 <template>
   <div class="role-container">
+    <div class="page-header">
+      <h2>角色管理</h2>
+    </div>
+    
     <!-- 搜索区域 -->
     <div class="search-wrapper">
       <div class="search-row">
@@ -82,7 +91,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
 
@@ -152,6 +161,7 @@ const handlePermSubmit = async () => {
 
 const tableData = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 const queryForm = ref({
   roleCode: '',
   roleName: '',

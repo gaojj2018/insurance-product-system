@@ -3,16 +3,21 @@ package com.insurance.policy.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.insurance.policy.client.ApplicationClient;
 import com.insurance.policy.entity.Policy;
+import com.insurance.policy.service.PdfGeneratorService;
 import com.insurance.policy.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 保单管理Controller - 提供保单相关的RESTful API
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/policy")
@@ -21,6 +26,18 @@ public class PolicyController {
     
     private final PolicyService policyService;
     private final ApplicationClient applicationClient;
+    private final PdfGeneratorService pdfGeneratorService;
+    private final RestTemplate restTemplate;
+    
+    @PostMapping("/count")
+    public ResponseEntity<Map<String, Object>> count() {
+        long count = policyService.count();
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 200);
+        result.put("data", Map.of("count", count));
+        result.put("message", "查询成功");
+        return ResponseEntity.ok(result);
+    }
     
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(
@@ -50,10 +67,37 @@ public class PolicyController {
     }
     
     @PostMapping("/page")
-    public ResponseEntity<Map<String, Object>> getPage(
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String status) {
+    public ResponseEntity<Map<String, Object>> getPage(@RequestBody Map<String, Object> params) {
+        int pageNum = 1;
+        int pageSize = 10;
+        String status = null;
+        
+        try {
+            if (params != null) {
+                if (params.get("pageNum") != null) {
+                    Object pageNumObj = params.get("pageNum");
+                    if (pageNumObj instanceof Number) {
+                        pageNum = ((Number) pageNumObj).intValue();
+                    } else {
+                        pageNum = Integer.parseInt(pageNumObj.toString());
+                    }
+                }
+                if (params.get("pageSize") != null) {
+                    Object pageSizeObj = params.get("pageSize");
+                    if (pageSizeObj instanceof Number) {
+                        pageSize = ((Number) pageSizeObj).intValue();
+                    } else {
+                        pageSize = Integer.parseInt(pageSizeObj.toString());
+                    }
+                }
+                if (params.get("status") != null) {
+                    status = params.get("status").toString();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error parsing page params: ", e);
+        }
+        
         IPage<Policy> page = policyService.getPage(pageNum, pageSize, status);
         Map<String, Object> response = new HashMap<>();
         response.put("code", 200);
@@ -82,6 +126,17 @@ public class PolicyController {
         Policy policy = policyService.getByPolicyNo(policyNo);
         Map<String, Object> response = new HashMap<>();
         if (policy != null) {
+            try {
+                String url = "http://customer-service/api/customer/" + policy.getApplicantId();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> customerResponse = restTemplate.getForObject(url, Map.class);
+                if (customerResponse != null && customerResponse.get("data") != null) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> customerData = (Map<String, Object>) customerResponse.get("data");
+                    policy.setApplicantName((String) customerData.get("customerName"));
+                }
+            } catch (Exception e) {
+            }
             response.put("code", 200);
             response.put("data", policy);
             response.put("message", "查询成功");
@@ -180,17 +235,18 @@ public class PolicyController {
         }
     }
     
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getStatistics() {
+        Map<String, Object> stats = policyService.getStatistics();
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("data", stats);
+        return ResponseEntity.ok(response);
+    }
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        var references = policyService.checkBusinessReferences(id);
-        
         Map<String, Object> result = new HashMap<>();
-        if (!references.isEmpty()) {
-            result.put("code", 400);
-            result.put("message", "该保单有关联的业务记录，无法删除");
-            result.put("data", references);
-            return ResponseEntity.ok(result);
-        }
         
         boolean success = policyService.removeById(id);
         result.put("code", success ? 200 : 500);
@@ -212,5 +268,20 @@ public class PolicyController {
             result.put("message", "退保失败，保单不存在或状态不允许退保");
         }
         return ResponseEntity.ok(result);
+    }
+    
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
+        Policy policy = policyService.getById(id);
+        if (policy == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        byte[] pdfBytes = pdfGeneratorService.generatePolicyPdf(policy);
+        
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=policy_" + policy.getPolicyNo() + ".pdf")
+                .body(pdfBytes);
     }
 }

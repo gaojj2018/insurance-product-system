@@ -1,5 +1,14 @@
+<!--
+ * 用户管理页面
+ * 功能: 系统用户的增删改查、角色分配、启用/禁用操作
+ * API: GET /user/page, POST /user, PUT /user/:id, DELETE /user/:id
+ -->
 <template>
   <div class="user-container">
+    <div class="page-header">
+      <h2>用户管理</h2>
+    </div>
+    
     <div class="search-wrapper">
       <div class="search-row">
         <div class="search-item">
@@ -22,8 +31,8 @@
 
     <el-card>
       <el-table :data="tableData" v-loading="loading" border stripe>
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="realName" label="真实姓名" width="120" />
+        <el-table-column prop="username" label="用户名" width="120" sortable />
+        <el-table-column prop="realName" label="真实姓名" width="120" sortable />
         <el-table-column prop="mobile" label="手机号" width="130" />
         <el-table-column prop="email" label="邮箱" width="180" />
         <el-table-column prop="orgName" label="所属机构" width="150" />
@@ -85,7 +94,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
 
@@ -116,6 +125,7 @@ import { getUserList, createUser, updateUser, deleteUser, assignRole, getOrgList
 const queryForm = ref({ username: '', orgId: null })
 const tableData = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 const orgList = ref([])
 const roleList = ref([])
 const dialogVisible = ref(false)

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.insurance.underwriting.client.ApplicationClient;
+import com.insurance.underwriting.client.CustomerClient;
 import com.insurance.underwriting.client.PolicyClient;
 import com.insurance.underwriting.entity.Underwriting;
 import com.insurance.underwriting.repository.UnderwritingRepository;
@@ -17,6 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 核保Service - 提供核保业务逻辑处理
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class UnderwritingService {
     private final UnderwritingRepository underwritingRepository;
     private final PolicyClient policyClient;
     private final ApplicationClient applicationClient;
+    private final CustomerClient customerClient;
     
     @Transactional
     public Underwriting createUnderwriting(Long applicationId, String applicationNo) {
@@ -65,7 +70,7 @@ public class UnderwritingService {
         wrapper.orderByDesc(Underwriting::getCreatedTime);
         IPage<Underwriting> resultPage = underwritingRepository.selectPage(page, wrapper);
         
-        // 补充产品名称和投保人信息
+        // 补充产品名称、投保人信息、保额、保费、缴费方式、保障期间和申请时间
         List<Underwriting> records = resultPage.getRecords();
         if (records != null && !records.isEmpty()) {
             for (Underwriting uw : records) {
@@ -75,7 +80,55 @@ public class UnderwritingService {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> appData = (Map<String, Object>) app.get("data");
                         uw.setProductName((String) appData.get("productName"));
-                        uw.setApplicantName((String) appData.get("applicantName"));
+                        
+                        Object coverageObj = appData.get("coverage");
+                        if (coverageObj != null) {
+                            if (coverageObj instanceof Number) {
+                                uw.setCoverageAmount(new java.math.BigDecimal(coverageObj.toString()));
+                            } else if (coverageObj instanceof String) {
+                                uw.setCoverageAmount(new java.math.BigDecimal((String) coverageObj));
+                            }
+                        }
+                        Object premiumObj = appData.get("premium");
+                        if (premiumObj != null) {
+                            if (premiumObj instanceof Number) {
+                                uw.setPremium(new java.math.BigDecimal(premiumObj.toString()));
+                            } else if (premiumObj instanceof String) {
+                                uw.setPremium(new java.math.BigDecimal((String) premiumObj));
+                            }
+                        }
+                        uw.setPaymentMethod((String) appData.get("paymentMethod"));
+                        uw.setCoveragePeriod((String) appData.get("coveragePeriod"));
+                        
+                        String applicantName = (String) appData.get("applicantName");
+                        if (applicantName == null || applicantName.isEmpty()) {
+                            Object applicantIdObj = appData.get("applicantId");
+                            if (applicantIdObj != null) {
+                                Long applicantId = applicantIdObj instanceof Number ? ((Number) applicantIdObj).longValue() : Long.parseLong(applicantIdObj.toString());
+                                try {
+                                    Map<String, Object> customer = customerClient.getCustomerById(applicantId);
+                                    if (customer != null && customer.get("data") != null) {
+                                        @SuppressWarnings("unchecked")
+                                        Map<String, Object> customerData = (Map<String, Object>) customer.get("data");
+                                        applicantName = (String) customerData.get("customerName");
+                                    }
+                                } catch (Exception ce) {
+                                    log.warn("获取客户信息失败: applicantId={}, error={}", applicantId, ce.getMessage());
+                                }
+                            }
+                        }
+                        uw.setApplicantName(applicantName);
+                        
+                        if (appData.get("createdTime") != null) {
+                            Object createdTimeObj = appData.get("createdTime");
+                            if (createdTimeObj instanceof String) {
+                                String timeStr = (String) createdTimeObj;
+                                if (timeStr.contains(" ")) {
+                                    timeStr = timeStr.replace(" ", "T");
+                                }
+                                uw.setCreatedTime(LocalDateTime.parse(timeStr));
+                            }
+                        }
                     }
                 } catch (Exception e) {
                     log.warn("获取申请信息失败: applicationId={}, error={}", uw.getApplicationId(), e.getMessage());

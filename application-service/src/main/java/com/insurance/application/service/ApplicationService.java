@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.insurance.application.client.CustomerClient;
 import com.insurance.application.client.ProductClient;
 import com.insurance.application.client.UnderwritingClient;
+import org.springframework.web.client.RestTemplate;
 import com.insurance.application.entity.Application;
 import com.insurance.application.repository.ApplicationRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * 投保申请Service - 提供投保申请业务逻辑处理
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ public class ApplicationService {
     private final ProductClient productClient;
     private final CustomerClient customerClient;
     private final UnderwritingClient underwritingClient;
+    private final RestTemplate restTemplate;
     
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final Random RANDOM = new Random();
@@ -73,7 +78,7 @@ public class ApplicationService {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> data = (Map<String, Object>) response.get("data");
                     if (data != null) {
-                        application.setApplicantName((String) data.get("name"));
+                        application.setApplicantName((String) data.get("customerName"));
                         log.info("从客户服务获取投保人信息成功: applicantId={}, applicantName={}", 
                                 application.getApplicantId(), application.getApplicantName());
                     }
@@ -84,9 +89,14 @@ public class ApplicationService {
             }
         }
         
-        // 计算保费（简化计算：保额 * 0.01）
-        if (application.getCoverage() != null) {
-            application.setPremium(application.getCoverage().multiply(new BigDecimal("0.01")));
+        // 计算保费：根据险种的计算方式和费率
+        if (application.getCoverage() != null && application.getCoverage().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal premium = calculatePremium(application.getCoverage(), application.getProductId());
+            if (premium != null) {
+                application.setPremium(premium);
+            } else {
+                application.setPremium(application.getCoverage().multiply(new BigDecimal("0.01")));
+            }
         }
         
         applicationRepository.insert(application);
@@ -167,7 +177,26 @@ public class ApplicationService {
             wrapper.like(Application::getProductName, productName);
         }
         wrapper.orderByDesc(Application::getCreatedTime);
-        return applicationRepository.selectPage(page, wrapper);
+        IPage<Application> resultPage = applicationRepository.selectPage(page, wrapper);
+        
+        for (Application app : resultPage.getRecords()) {
+            if (app.getProductId() != null) {
+                try {
+                    String url = "http://product-service/api/product/" + app.getProductId();
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+                    if (response != null && response.get("data") != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> productData = (Map<String, Object>) response.get("data");
+                        app.setProductName((String) productData.get("productName"));
+                    }
+                } catch (Exception e) {
+                    log.warn("获取产品信息失败: productId={}, error={}", app.getProductId(), e.getMessage());
+                }
+            }
+        }
+        
+        return resultPage;
     }
     
     public Application getApplicationById(Long id) {
@@ -253,6 +282,23 @@ public class ApplicationService {
         return rows > 0;
     }
     
+    /**
+     * 强制删除投保申请（忽略状态，用于测试数据清理）
+     */
+    @Transactional
+    public boolean forceDeleteApplication(Long id) {
+        Application application = applicationRepository.selectById(id);
+        if (application == null) {
+            log.warn("投保申请不存在: id={}", id);
+            return false;
+        }
+        
+        int rows = applicationRepository.deleteById(id);
+        log.info("强制删除投保申请: id={}, applicationNo={}, status={}, rows={}", 
+                id, application.getApplicationNo(), application.getStatus(), rows);
+        return rows > 0;
+    }
+    
     public List<Application> getApplicationsByApplicant(Long applicantId) {
         LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Application::getApplicantId, applicantId);
@@ -266,10 +312,50 @@ public class ApplicationService {
     public List<Application> getApplicationsByProductId(Long productId) {
         LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Application::getProductId, productId);
-        // 排除已拒绝和已退保的状态
+        // 排除已拒绝、已退保的状态
         wrapper.notIn(Application::getStatus, "REJECTED", "CANCELLED", "WITHDRAWN");
         wrapper.orderByDesc(Application::getCreatedTime);
         return applicationRepository.selectList(wrapper);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private BigDecimal calculatePremium(BigDecimal coverage, Long productId) {
+        if (productId == null || coverage == null) {
+            return null;
+        }
+        try {
+            String url = "http://product-service/api/coverage/product/" + productId;
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response == null || response.get("data") == null) {
+                log.warn("未找到产品对应的险种配置: productId={}", productId);
+                return null;
+            }
+            List<Map<String, Object>> coverages = (List<Map<String, Object>>) response.get("data");
+            if (coverages.isEmpty()) {
+                log.warn("产品无险种配置: productId={}", productId);
+                return null;
+            }
+            BigDecimal totalPremium = BigDecimal.ZERO;
+            for (Map<String, Object> cov : coverages) {
+                String calcType = (String) cov.get("calculationType");
+                Object rateObj = cov.get("basePremiumRate");
+                if (rateObj == null) {
+                    continue;
+                }
+                BigDecimal rate = new BigDecimal(rateObj.toString());
+                if ("FIXED".equals(calcType)) {
+                    totalPremium = totalPremium.add(rate);
+                } else if ("PERCENTAGE".equals(calcType)) {
+                    totalPremium = totalPremium.add(coverage.multiply(rate));
+                }
+            }
+            if (totalPremium.compareTo(BigDecimal.ZERO) > 0) {
+                return totalPremium;
+            }
+        } catch (Exception e) {
+            log.error("获取险种配置失败: productId={}, error={}", productId, e.getMessage());
+        }
+        return null;
     }
     
     /**
@@ -279,7 +365,6 @@ public class ApplicationService {
         LambdaQueryWrapper<Application> wrapper = new LambdaQueryWrapper<>();
         wrapper.and(w -> w.eq(Application::getApplicantId, customerId)
                        .or().eq(Application::getInsuredId, customerId));
-        // 排除已拒绝、已退保的状态
         wrapper.notIn(Application::getStatus, "REJECTED", "CANCELLED", "WITHDRAWN");
         wrapper.orderByDesc(Application::getCreatedTime);
         return applicationRepository.selectList(wrapper);

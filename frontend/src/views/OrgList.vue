@@ -1,5 +1,14 @@
+<!--
+ * 机构管理页面
+ * 功能: 系统机构的树形结构管理，包括增删改查
+ * API: GET /org/tree, POST /org, PUT /org/:id, DELETE /org/:id
+ -->
 <template>
   <div class="org-container">
+    <div class="page-header">
+      <h2>机构管理</h2>
+    </div>
+    
     <div class="search-wrapper">
       <div class="search-row">
         <div class="search-item">
@@ -77,7 +86,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -91,6 +100,7 @@ import { getOrgTree, getOrgById, createOrg, updateOrg, deleteOrg } from '@/api'
 const queryForm = ref({ keyword: '' })
 const tableData = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增机构')
 const formRef = ref()

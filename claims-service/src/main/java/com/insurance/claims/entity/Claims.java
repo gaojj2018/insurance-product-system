@@ -51,6 +51,8 @@ public class Claims {
     
     private LocalDateTime payTime;
     
+    private LocalDateTime settleTime;
+    
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdTime;
     

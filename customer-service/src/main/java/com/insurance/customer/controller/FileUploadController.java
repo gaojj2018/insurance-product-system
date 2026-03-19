@@ -142,4 +142,14 @@ public class FileUploadController {
         }
         return false;
     }
+    
+    @PostMapping("/idCard")
+    public ResponseEntity<Map<String, Object>> uploadIdCard(@RequestParam("file") MultipartFile file) {
+        return uploadFile(file, "idcard");
+    }
+    
+    @PostMapping("/healthDeclaration")
+    public ResponseEntity<Map<String, Object>> uploadHealthDeclaration(@RequestParam("file") MultipartFile file) {
+        return uploadFile(file, "health");
+    }
 }

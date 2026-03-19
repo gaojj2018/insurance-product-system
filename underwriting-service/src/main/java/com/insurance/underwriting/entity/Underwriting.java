@@ -29,6 +29,26 @@ public class Underwriting {
     private String applicantName;
     
     /**
+     * 保额（冗余字段，从投保申请获取）
+     */
+    private BigDecimal coverageAmount;
+    
+    /**
+     * 保费（冗余字段，从投保申请获取）
+     */
+    private BigDecimal premium;
+    
+    /**
+     * 缴费方式（冗余字段，从投保申请获取）
+     */
+    private String paymentMethod;
+    
+    /**
+     * 保障期间（冗余字段，从投保申请获取）
+     */
+    private String coveragePeriod;
+    
+    /**
      * 核保结果: PASS-通过, DECLINE-拒保, DEFERRED-延期, MANUAL-需人工核保
      */
     private String result;

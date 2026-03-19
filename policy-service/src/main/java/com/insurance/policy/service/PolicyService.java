@@ -11,6 +11,7 @@ import com.insurance.policy.repository.PolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * 保单Service - 提供保单业务逻辑处理
+ */
 @Service
 @RequiredArgsConstructor
 public class PolicyService {
@@ -27,9 +31,14 @@ public class PolicyService {
     private final ClaimsClient claimsClient;
     private final FinanceClient financeClient;
     private final AccountingClient accountingClient;
+    private final RestTemplate restTemplate;
     
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final Random RANDOM = new Random();
+    
+    public long count() {
+        return policyRepository.selectCount(null);
+    }
     
     @Transactional
     public Policy createPolicy(Long applicationId, String applicationNo, Long productId, String productName,
@@ -61,6 +70,20 @@ public class PolicyService {
         policy.setNextPaymentDate(now.plusMonths(12));
         
         policyRepository.insert(policy);
+        
+        try {
+            java.util.Map<String, Object> premiumRecord = new java.util.HashMap<>();
+            premiumRecord.put("policyNo", policyNo);
+            premiumRecord.put("applicationNo", applicationNo);
+            premiumRecord.put("productCode", productCode);
+            premiumRecord.put("productName", productName);
+            premiumRecord.put("insuredName", "");
+            premiumRecord.put("premium", premium);
+            premiumRecord.put("paymentStatus", "PENDING");
+            financeClient.createPremiumRecord(premiumRecord);
+        } catch (Exception e) {
+        }
+        
         return policy;
     }
     
@@ -71,7 +94,30 @@ public class PolicyService {
             wrapper.eq(Policy::getStatus, status);
         }
         wrapper.orderByDesc(Policy::getCreatedTime);
-        return policyRepository.selectPage(page, wrapper);
+        
+        IPage<Policy> result = policyRepository.selectPage(page, wrapper);
+        
+        for (Policy p : result.getRecords()) {
+            if (p.getProductId() != null) {
+                try {
+                    String url = "http://product-service/api/product/" + p.getProductId();
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+                    if (response != null && response.get("data") != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> productData = (Map<String, Object>) response.get("data");
+                        p.setProductName((String) productData.get("productName"));
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        }
+        
+        long total = policyRepository.selectCount(wrapper);
+        result.setTotal(total);
+        
+        return result;
     }
     
     public Policy getById(Long id) {
@@ -116,6 +162,31 @@ public class PolicyService {
         wrapper.notIn(Policy::getStatus, "TERMINATED", "EXPIRED", "SURRENDERED", "LAPSED");
         wrapper.orderByDesc(Policy::getCreatedTime);
         return policyRepository.selectList(wrapper);
+    }
+    
+    public Map<String, Object> getStatistics() {
+        Map<String, Object> stats = new java.util.HashMap<>();
+        
+        long total = policyRepository.selectCount(null);
+        
+        LambdaQueryWrapper<Policy> activeWrapper = new LambdaQueryWrapper<>();
+        activeWrapper.eq(Policy::getStatus, "EFFECTIVE");
+        long active = policyRepository.selectCount(activeWrapper);
+        
+        LambdaQueryWrapper<Policy> expiredWrapper = new LambdaQueryWrapper<>();
+        expiredWrapper.eq(Policy::getStatus, "EXPIRED");
+        long expired = policyRepository.selectCount(expiredWrapper);
+        
+        LambdaQueryWrapper<Policy> cancelledWrapper = new LambdaQueryWrapper<>();
+        cancelledWrapper.in(Policy::getStatus, "TERMINATED", "SURRENDERED", "LAPSED");
+        long cancelled = policyRepository.selectCount(cancelledWrapper);
+        
+        stats.put("totalPolicies", total);
+        stats.put("activePolicies", active);
+        stats.put("expiredPolicies", expired);
+        stats.put("cancelledPolicies", cancelled);
+        
+        return stats;
     }
     
     public List<Map<String, Object>> checkBusinessReferences(Long policyId) {
@@ -211,12 +282,17 @@ public class PolicyService {
         if (policy == null) {
             return false;
         }
-        // Only EFFECTIVE or ACTIVE status can surrender
         if (!"EFFECTIVE".equals(policy.getStatus()) && !"ACTIVE".equals(policy.getStatus())) {
             return false;
         }
         policy.setStatus("SURRENDERED");
         policyRepository.updateById(policy);
+        
+        try {
+            financeClient.refundPremiumByPolicyNo(policy.getPolicyNo());
+        } catch (Exception e) {
+        }
+        
         return true;
     }
 }

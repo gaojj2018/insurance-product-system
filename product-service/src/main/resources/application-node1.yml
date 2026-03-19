@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: insurance-product-service
+    name: product-service
   
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -63,7 +63,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 jwt:
-  secret: insurance-product-service-secret-key-2026
+  secret: product-service-secret-key-2026
   expiration: 86400000
 
 logging:

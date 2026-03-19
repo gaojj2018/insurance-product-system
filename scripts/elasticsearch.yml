@@ -1,0 +1,11 @@
+cluster.name: insurance-cluster
+node.name: node-1
+path.data: D:\Program Files\elasticsearch-8.11.0\data
+path.logs: D:\Program Files\elasticsearch-8.11.0\logs
+network.host: 127.0.0.1
+http.port: 9200
+discovery.type: single-node
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
