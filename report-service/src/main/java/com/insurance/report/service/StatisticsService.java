@@ -18,21 +18,20 @@ public class StatisticsService {
         Map<String, Object> data = new HashMap<>();
         
         try {
-            Object customers = restTemplate.postForObject("http://customer-service/api/customer/count", null, Object.class);
+            Object customers = restTemplate.postForObject("http://localhost:8082/api/customer/count", null, Object.class);
             data.put("totalCustomers", getValueFromResponse(customers, "count"));
             
             try {
-                Object policyStats = restTemplate.getForObject("http://policy-service/api/policy/statistics", Object.class);
+                Object policyStats = restTemplate.getForObject("http://localhost:8085/api/policy/statistics", Object.class);
                 if (policyStats instanceof Map) {
                     Map<String, Object> policyMap = (Map<String, Object>) policyStats;
                     Object statsData = policyMap.get("data");
                     if (statsData instanceof Map) {
                         Map<String, Object> statsMap = (Map<String, Object>) statsData;
-                        data.put("totalPolicies", statsMap.getOrDefault("total", 0L));
-                        data.put("activePolicies", statsMap.getOrDefault("active", 0L));
-                        data.put("expiredPolicies", statsMap.getOrDefault("expired", 0L));
-                        data.put("cancelledPolicies", statsMap.getOrDefault("cancelled", 0L));
-                        data.put("totalPremium", statsMap.getOrDefault("totalPremium", BigDecimal.ZERO));
+                        data.put("totalPolicies", getLongValue(statsMap, "totalPolicies", "total", "total"));
+                        data.put("activePolicies", getLongValue(statsMap, "activePolicies", "active", "EFFECTIVE"));
+                        data.put("expiredPolicies", getLongValue(statsMap, "expiredPolicies", "expired", "EXPIRED"));
+                        data.put("cancelledPolicies", getLongValue(statsMap, "cancelledPolicies", "cancelled", "SURRENDERED"));
                     }
                 }
             } catch (Exception e) {
@@ -40,11 +39,10 @@ public class StatisticsService {
                 data.put("activePolicies", 0L);
                 data.put("expiredPolicies", 0L);
                 data.put("cancelledPolicies", 0L);
-                data.put("totalPremium", BigDecimal.ZERO);
             }
             
             try {
-                Object financeStats = restTemplate.getForObject("http://finance-service/api/premium/statistics", Object.class);
+                Object financeStats = restTemplate.getForObject("http://localhost:8087/api/premium/statistics", Object.class);
                 if (financeStats instanceof Map) {
                     Map<String, Object> financeMap = (Map<String, Object>) financeStats;
                     Object statsData = financeMap.get("data");
@@ -58,7 +56,7 @@ public class StatisticsService {
             }
             
             try {
-                Object claimsStats = restTemplate.getForObject("http://claims-service/api/claims/statistics", Object.class);
+                Object claimsStats = restTemplate.getForObject("http://localhost:8086/api/claims/statistics", Object.class);
                 if (claimsStats instanceof Map) {
                     Map<String, Object> claimsMap = (Map<String, Object>) claimsStats;
                     Object statsData = claimsMap.get("data");
@@ -93,17 +91,16 @@ public class StatisticsService {
         Map<String, Object> data = new HashMap<>();
         
         try {
-            Object result = restTemplate.getForObject("http://policy-service/api/policy/statistics", Object.class);
+            Object result = restTemplate.getForObject("http://localhost:8085/api/policy/statistics", Object.class);
             if (result instanceof Map) {
                 Map<String, Object> resultMap = (Map<String, Object>) result;
                 Object statsData = resultMap.get("data");
                 if (statsData instanceof Map) {
                     Map<String, Object> statsMap = (Map<String, Object>) statsData;
-                    data.put("totalPolicies", statsMap.getOrDefault("total", 0L));
-                    data.put("activePolicies", statsMap.getOrDefault("active", 0L));
-                    data.put("expiredPolicies", statsMap.getOrDefault("expired", 0L));
-                    data.put("cancelledPolicies", statsMap.getOrDefault("cancelled", 0L));
-                    data.put("totalPremium", statsMap.getOrDefault("totalPremium", BigDecimal.ZERO));
+                    data.put("totalPolicies", getLongValue(statsMap, "totalPolicies", "total"));
+                    data.put("activePolicies", getLongValue(statsMap, "activePolicies", "active"));
+                    data.put("expiredPolicies", getLongValue(statsMap, "expiredPolicies", "expired"));
+                    data.put("cancelledPolicies", getLongValue(statsMap, "cancelledPolicies", "cancelled"));
                 }
             }
         } catch (Exception e) {
@@ -111,7 +108,6 @@ public class StatisticsService {
             data.put("activePolicies", 0L);
             data.put("expiredPolicies", 0L);
             data.put("cancelledPolicies", 0L);
-            data.put("totalPremium", BigDecimal.ZERO);
         }
         
         return data;
@@ -121,7 +117,7 @@ public class StatisticsService {
         Map<String, Object> data = new HashMap<>();
         
         try {
-            Object result = restTemplate.getForObject("http://claims-service/api/claims/statistics", Object.class);
+            Object result = restTemplate.getForObject("http://localhost:8086/api/claims/statistics", Object.class);
             if (result instanceof Map) {
                 Map<String, Object> resultMap = (Map<String, Object>) result;
                 Object statsData = resultMap.get("data");
@@ -149,10 +145,10 @@ public class StatisticsService {
         Map<String, Object> data = new HashMap<>();
         
         try {
-            Object result = restTemplate.postForObject("http://product-service/api/product/count", null, Object.class);
+            Object result = restTemplate.postForObject("http://localhost:8080/api/product/count", null, Object.class);
             long total = getValueFromResponse(result, "count");
             
-            Object typeResult = restTemplate.postForObject("http://product-service/api/product/page", 
+            Object typeResult = restTemplate.postForObject("http://localhost:8080/api/product/page", 
                 java.util.Map.of("pageNum", 1, "pageSize", 1000), Object.class);
             
             Map<String, Integer> productCounts = new HashMap<>();
@@ -201,17 +197,24 @@ public class StatisticsService {
     private long getValueFromResponse(Object response, String field) {
         if (response instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) response;
-            Object code = map.get("code");
-            if (code != null && (code instanceof Integer) && (Integer) code == 200) {
-                Object data = map.get("data");
-                if (data instanceof Map) {
-                    Object count = ((Map<String, Object>) data).get(field);
-                    if (count instanceof Number) {
-                        return ((Number) count).longValue();
-                    }
+            Object data = map.get("data");
+            if (data instanceof Map) {
+                Object count = ((Map<String, Object>) data).get(field);
+                if (count instanceof Number) {
+                    return ((Number) count).longValue();
                 }
             }
         }
         return 0;
+    }
+    
+    private long getLongValue(Map<String, Object> map, String... keys) {
+        for (String key : keys) {
+            Object value = map.get(key);
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
+            }
+        }
+        return 0L;
     }
 }
